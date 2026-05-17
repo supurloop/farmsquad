@@ -1,0 +1,34 @@
+ADDR        LEN      NAME               Description
+0x0000      0002     HEADER (FFFF)
+0x0002               HEADER END
+
+0x0096      0035     ZP
+0x00CB               ZP END
+
+0x2000      7500     MAIN STARTADDRESS  Default program start address.
+
+0x2E00      00F6     SYSCHKCHNK         Checks if system has enough memory to run program and that start address not below MEMLO.
+0x2Ef6               SYSCHKCHNK END
+
+0x9500               END MAIN STARTADDRESS
+
+
+0x9D00      0600     RMT SONG
+0xA000      2000     BASIC or 8 KB Cart
+0xA300               RMT SONG END????????????????????????
+0xA500      0800     RMT PLAYER????????????????????????????
+0xCFFF               END BASIC
+
+0xD000      1000     UNALLOCATED
+0xDFFF               UNALLOCATED END
+
+0xE000      1000     HW IO
+0xEFFF               END HW IO
+
+0xF000      1000     OS ROM
+0xFFFF               OS ROM END
+
+
+???
+OS.sdlst    0025     DISPLAY LIST       Not in linker file!!!!! 
+OS.sdlst END         DISPLAY LIST END
