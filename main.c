@@ -107,6 +107,7 @@
 uint8_t terrain[TERRAIN_PAGES * NUM_ROWS *(NUM_COLUMNS - (ROW_ADDR_OFF << 1))];
 uint8_t *pterrain;
 uint8_t tline;
+uint8_t wsyncCount;
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros to convert single byte chars into double byte chars                                    */
@@ -304,32 +305,32 @@ uint8_t r;
 uint8_t *pterrain2;
 uint8_t tline2;
 
-#define DO_LYRICS (0u)
+#define DO_LYRICS (1u)
 #if DO_LYRICS == 1
-const char *ly1 = "\x26" "arm" "\x33" "quad\x01\x01\x01";
-const char *ly2 = "\x22" "est\x00of\x00the\x00" "best\x01";
-const char *ly3 = "\x37ill\x00pass\x00the\x00test\x01";
+const char *ly1 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x26" "arm" "\x33" "quad\x01\x01\x01";
+const char *ly2 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x22" "est\x00of\x00the\x00" "best\x01";
+const char *ly3 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x37ill\x00pass\x00the\x00test\x01";
 //                 1234567890123456789012345678901234567890
 const char *ly4 = "\x34hey\x00mutilate\x00thirst\x00\x0d\x00" "by\x00manly\x00" "drinks\x0e";
-const char *ly5 = "\x2duscles\x00" "bulge\x00\x0d\x00they\x00" "cannot\x00think\x0e";
-const char *ly6 = "\x37" "e\x00" "built\x00the\x00walls\x00\x0d\x00to\x00keep\x00\x07" "em\x00out\x0e";
+const char *ly5 = "\x00\x00\x00\x2duscles\x00" "bulge\x00\x0d\x00they\x00" "cannot\x00think\x0e";
+const char *ly6 = "\x00\x37" "e\x00" "built\x00the\x00walls\x00\x0d\x00to\x00keep\x00them\x00out\x0e";
 //                 1234567890123456789012345678901234567890
 const char *ly7 = "\x21nd\x00still\x00we\x00hear\x00them\x00\x0d\x00rant\x00" "and\x00shout\x1a";
-const char *ly8 = "\x07\x27ive\x00the\x00" "crops\x00\x0d\x00" "a\x00surge\x00of\x00height\x07";
-const char *ly9 = "\x07\x26" "eed\x00them\x00with\x00\x0d\x00" "electrolyes\x01\x07";
+const char *ly8 = "\x00\x02\x27ive\x00the\x00" "crops\x00\x0d\x00" "a\x00surge\x00of\x00height\x0e\x02";
+const char *ly9 = "\x00\x00\x00\x00\x02\x26" "eed\x00them\x00with\x00\x0d\x00" "electrolyes\x01\x02";
 //                  1234567890123456789012345678901234567890
-const char *ly10 = "\x24rink\x00" "drones\x00" "fly\x00\x0d\x00to\x00" "douse\x00our\x00" "crop\x0e";
-const char *ly11 = "\x37hat\x07s\x00our\x00" "duty\x1f\x00\x0d\x00\x2d" "ake\x00them\x00stop\x0e";
+const char *ly10 = "\x00\x34hey\x00" "fly\x00" "drones\x00\x0d\x00to\x00" "douse\x00our\x00" "crop\x0e";
+const char *ly11 = "\x00\x00\x00\x2fur\x00sworn\x00" "duty\x1f\x00\x0d\x00" "make\x00them\x00stop\x0e";
 
-const char *ly12 = "\x25" "ach\x00" "day\x00tractors\x00\x0d\x00quickly\x00harvest\x07";
-const char *ly13 = "\x24odging\x00rocks\x00\x0d\x00" "being\x00smartest\x0e";
-const char *ly14 = "\x37ith\x00good\x00luck\x00\x0d\x00we\x00" "find\x00repairs\x07";
-const char *ly15 = "\x22" "ecause\x00two\x00hits\x00\x0d\x00is\x00" "all\x00they\x00" "bear\x0e";
-const char *ly16 = "\x21\x00" "determined\x00search\x00\x0d\x00" "for\x00" "\x25\x2d\x30s\x07";
+const char *ly12 = "\x00\x00\x25" "ach\x00" "day\x00tractors\x00\x0d\x00quickly\x00harvest\x0e";
+const char *ly13 = "\x00\x00\x00\x00\x24odging\x00rocks\x00\x0d\x00" "being\x00smartest\x0e";
+const char *ly14 = "\x00\x00\x00\x37ith\x00good\x00luck\x00\x0d\x00we\x00" "find\x00repairs\x0e";
+const char *ly15 = "\x00\x00\x22" "ecause\x00two\x00hits\x00\x0d\x00is\x00" "all\x00they\x00" "bear\x0e";
+const char *ly16 = "\x00\x00\x00\x00\x21\x00" "determined\x00search\x00\x0d\x00" "for\x00" "\x25\x2d\x30s\x0e";
 //                  1234567890123456789012345678901234567890
-const char *ly17 = "\x34ogether\x00we\x00tune\x00\x0d\x00to\x00stop\x00their\x00spree\x0e";
-const char *ly18 = "\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x07";
-const char *ly19 = "\x2cive\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01";
+const char *ly17 = "\x34ogether\x00we\x00tune\x00\x0d\x00" "and\x00stop\x00their\x00spree\x0e";
+const char *ly18 = "\x00\x00\x00\x00\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x0e";
+const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01";
 #endif
 
 #if 0
@@ -560,43 +561,37 @@ void dli_routine7(void);
     asm("pla"); \
     asm("rti");
 
+
 #define DLI_ROUTINE(vs, vsn, da, ca, wsyncs) \
 void dli_routine##vs(void) { \
     DLI_ENTER(); \
     DLI_DELAY(); \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    wsyncs \
+    wsyncCount = wsyncs; \
+    while (wsyncCount != 0) { \
+        wsyncCount--; \
+        ANTIC.wsync = 0; \
+    } \
     UFO_SPRITE_SET_ALL##da(); \
     SHADOW_SPRITE_SET_ALL(); \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
-    ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; \
+    wsyncCount = 112; \
+    while (wsyncCount != 0) { \
+        wsyncCount--; \
+        ANTIC.wsync = 0; \
+    } \
     DLI_PLAYERS(); \
     COMBINE_SPRITES##ca(); \
     OS.vdslst = &dli_routine##vsn; \
     DLI_EXIT(); \
 }
 
-DLI_ROUTINE(0, 7, 2, 2, ANTIC.wsync = 0;)
-DLI_ROUTINE(1, 0, 2, 2, ANTIC.wsync = 0; ANTIC.wsync = 0;)
-DLI_ROUTINE(2, 1, 1, 2, ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0;)
-DLI_ROUTINE(3, 2, 1, 2, ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0;)
-DLI_ROUTINE(4, 3, 2, 1, ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0;)
-DLI_ROUTINE(5, 4, 2, 1, ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0;)
-DLI_ROUTINE(6, 5, 1, 1, ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0;)
-DLI_ROUTINE(7, 6, 1, 1, ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0; ANTIC.wsync = 0;)
+DLI_ROUTINE(0, 7, 2, 2, 17)
+DLI_ROUTINE(1, 0, 2, 2, 18)
+DLI_ROUTINE(2, 1, 1, 2, 19)
+DLI_ROUTINE(3, 2, 1, 2, 20)
+DLI_ROUTINE(4, 3, 2, 1, 21)
+DLI_ROUTINE(5, 4, 2, 1, 22)
+DLI_ROUTINE(6, 5, 1, 1, 23)
+DLI_ROUTINE(7, 6, 1, 1, 23)
 
 #define MOVE_PLAYER(pn, lb, ub) \
     /* Read paddle */ \
@@ -961,6 +956,20 @@ void dvbi_routine_GameIdle(void)
             }
         }
     }
+    else if (fs == 4)
+    {
+        animation++;
+        animation &= 0x03;
+        memcpy(p + (CHAR_REPAIR * CHAR_SET_SIZE), &repairsCharAnimation[animation], CHAR_SET_SIZE);
+        memcpy(p + (CHAR_EMP * CHAR_SET_SIZE), &empCharAnimation[animation], CHAR_SET_SIZE);
+
+        hposShadow++;
+        if (hposShadow >= (hposDrone + 16))
+        {
+            /* Reset */
+            hposShadow = hposDrone - 16;
+        }
+    }
     fs--;
     fs &= 0x07;
 
@@ -1018,7 +1027,7 @@ void dvbi_routine_ShowLyrics(void)
     rmtplayCount++;
     if (rmtplayCount > 5) rmtplayCount = 0;
 
-    OS.color4 = mainbgcolor;
+    //OS.color4 = mainbgcolor;
 
     __asm__("jmp $E462");
 }
@@ -1061,6 +1070,13 @@ void main(void)
 
     /* Copy the next display list to base DL List RAM */
     waitForVBLANK();
+    OS.color0 = 0;
+    //OS.color1 = 0;
+    OS.color2 = 0;
+    OS.color3 = 0;
+    OS.color4 = 0;
+
+    //OS.chbas = 0xE0;
     memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
     ANTIC.nmien = 0x00;
     OS.vvblkd = &dvbi_routine_ShowLyrics;
@@ -1068,29 +1084,30 @@ void main(void)
     RMTInitIdle;
     ANTIC.nmien = 0xC0;
 
-    for (;;)
+    //for (;;)
     {
-
         line = 0;
         while (line++ != 192)
         {
             waitForVBLANK();
         }
 
-        LYRIC(ly1, 12);
-        LYRIC(ly2, 17);
-        LYRIC(ly1, 12);
-        LYRIC(ly3, 19);
+        LYRIC(ly1, 26);
+        LYRIC(ly2, 28);
+        LYRIC(ly1, 26);
+        LYRIC(ly3, 29);
 
-        LYRIC2(ly4, 38);
-        LYRIC2(ly5, 34);
-        LYRIC2(ly6, 38);
+        LYRIC2(ly4, 39);
+        LYRIC2(ly5, 37);
+        LYRIC2(ly6, 39);
         LYRIC2(ly7, 40);
 
-        LYRIC2(ly8, 36);
-        LYRIC2(ly9, 32);
-        LYRIC2(ly10, 36);
-        LYRIC2(ly11, 34);
+        LYRIC2(ly8, 38);
+        LYRIC2(ly9, 36);
+        LYRIC2(ly10, 38);
+        LYRIC2(ly11, 37);
+
+        memset(&rows[0], 0, 40);
 
         line = 0;
         while (line++ != 192)
@@ -1098,47 +1115,31 @@ void main(void)
             waitForVBLANK();
         }
 
-        LYRIC(ly1, 12);
-        LYRIC(ly2, 17);
-        LYRIC(ly1, 12);
-        LYRIC(ly3, 19);
+        LYRIC(ly1, 26);
+        LYRIC(ly2, 28);
+        LYRIC(ly1, 26);
+        LYRIC(ly3, 29);
 
-        LYRIC2(ly12, 36);
-        LYRIC2(ly13, 31);
-        LYRIC2(ly14, 33);
-        LYRIC2(ly15, 36);
+        LYRIC2(ly12, 38);
+        LYRIC2(ly13, 35);
+        LYRIC2(ly14, 36);
+        LYRIC2(ly15, 38);
 
-        LYRIC2(ly16, 32);
-        LYRIC2(ly17, 39);
-        LYRIC2(ly18, 31);
-        LYRIC2(ly19, 30);
-
-        memset(&rows[0], 0, 40);
-
-#if 0        
-        line = 0;
-        while (line++ != 48)
-        {
-            waitForVBLANK();
-        }
+        LYRIC2(ly16, 36);
+        LYRIC2(ly17, 40);
+        LYRIC2(ly18, 35);
+        LYRIC2(ly19, 37);
 
         memset(&rows[0], 0, 40);
-        memcpy(&rows[0], ly1, 12);
-
-        line = 0;
-        while (line++ != 48)
-        {
-            waitForVBLANK();
-        }
-        memset(&rows[0], 0, 40);
-        memcpy(&rows[0], ly2, 17);
-#endif        
     }
-    for(;;);
-#else    
+    //for(;;);
+//#else    
 
     /* Initialize Terrain */
-#if 1  
+#if 1
+    RMTStop;
+    ANTIC.nmien = 0x00;
+
     memset(terrain, 0, sizeof(terrain));
     InitTerrain();    
     pterrain = terrain;
@@ -1159,6 +1160,7 @@ void main(void)
     /* Copy the next display list to base DL List RAM */
     memcpy((void *)DL_ADDR, &dlist, DL_SIZE);
 
+    ANTIC.nmien = 0xC0;
     waitForVBLANK();
 
     /* Initialize and sitch to custom character set @ CS_ADDR */
@@ -1380,6 +1382,6 @@ void main(void)
         }
 #endif            
     }
-#endif
+//#endif
 
 }
