@@ -31,6 +31,18 @@
 #include <atari.h>
 #include "main.h"
 
+const void dlistlyrics =
+{
+    DL_DLI(DL_BLK8),
+    DL_BLK8,
+    DL_BLK8,
+    DL_BLK8,
+    DL_LMS(DL_CHR40x8x1),
+    &rows[0],
+    DL_JVB,
+    0x0600,
+};
+
 const void dlist =
 {
     DL_DLI(DL_VSCROL(DL_LMS(DL_CHR40x8x4))),\

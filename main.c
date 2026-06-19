@@ -256,8 +256,9 @@ uint8_t thposp3;
 uint8_t ufoVolume;
 #pragma data-name (pop)
 
-#define MAIN_COLOR_START 64
-//#define MAIN_COLOR_END 47
+//#define MAIN_COLOR_START 64  // deep magenta
+#define MAIN_COLOR_START 47
+#define MAIN_COLOR_END 47
 
 unsigned char mainbgcolor = MAIN_COLOR_START;
 unsigned char currClockFrame = 0;
@@ -302,6 +303,34 @@ uint8_t column;
 uint8_t r;
 uint8_t *pterrain2;
 uint8_t tline2;
+
+#define DO_LYRICS (0u)
+#if DO_LYRICS == 1
+const char *ly1 = "\x26" "arm" "\x33" "quad\x01\x01\x01";
+const char *ly2 = "\x22" "est\x00of\x00the\x00" "best\x01";
+const char *ly3 = "\x37ill\x00pass\x00the\x00test\x01";
+//                 1234567890123456789012345678901234567890
+const char *ly4 = "\x34hey\x00mutilate\x00thirst\x00\x0d\x00" "by\x00manly\x00" "drinks\x0e";
+const char *ly5 = "\x2duscles\x00" "bulge\x00\x0d\x00they\x00" "cannot\x00think\x0e";
+const char *ly6 = "\x37" "e\x00" "built\x00the\x00walls\x00\x0d\x00to\x00keep\x00\x07" "em\x00out\x0e";
+//                 1234567890123456789012345678901234567890
+const char *ly7 = "\x21nd\x00still\x00we\x00hear\x00them\x00\x0d\x00rant\x00" "and\x00shout\x1a";
+const char *ly8 = "\x07\x27ive\x00the\x00" "crops\x00\x0d\x00" "a\x00surge\x00of\x00height\x07";
+const char *ly9 = "\x07\x26" "eed\x00them\x00with\x00\x0d\x00" "electrolyes\x01\x07";
+//                  1234567890123456789012345678901234567890
+const char *ly10 = "\x24rink\x00" "drones\x00" "fly\x00\x0d\x00to\x00" "douse\x00our\x00" "crop\x0e";
+const char *ly11 = "\x37hat\x07s\x00our\x00" "duty\x1f\x00\x0d\x00\x2d" "ake\x00them\x00stop\x0e";
+
+const char *ly12 = "\x25" "ach\x00" "day\x00tractors\x00\x0d\x00quickly\x00harvest\x07";
+const char *ly13 = "\x24odging\x00rocks\x00\x0d\x00" "being\x00smartest\x0e";
+const char *ly14 = "\x37ith\x00good\x00luck\x00\x0d\x00we\x00" "find\x00repairs\x07";
+const char *ly15 = "\x22" "ecause\x00two\x00hits\x00\x0d\x00is\x00" "all\x00they\x00" "bear\x0e";
+const char *ly16 = "\x21\x00" "determined\x00search\x00\x0d\x00" "for\x00" "\x25\x2d\x30s\x07";
+//                  1234567890123456789012345678901234567890
+const char *ly17 = "\x34ogether\x00we\x00tune\x00\x0d\x00to\x00stop\x00their\x00spree\x0e";
+const char *ly18 = "\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x07";
+const char *ly19 = "\x2cive\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01";
+#endif
 
 #if 0
 #define BCD_ADD(va, plus, line) \
@@ -603,13 +632,12 @@ uint8_t *phrct;
     paddle = (hposp##pn - (PLAYER_MIN_HPOS - PLAYER_WIDTH)) >> 2; \
     phrct = phrc + paddle; \
     if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score++; } \
-    else if (*phrct == CHAR_ROCK) colpm##pn = (HUE_MAGENTA << 4) | 0x06; \
+    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; OS.vvblkd = &dvbi_routine_GameIdleInit; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
     else if (*phrct == CHAR_REPAIR) colpm##pn = 0; \
     phrct++; \
     if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score++; } \
-    else if (*phrct == CHAR_ROCK) colpm##pn = (HUE_MAGENTA << 4) | 0x06; \
+    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; OS.vvblkd = &dvbi_routine_GameIdleInit; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
     else if (*phrct == CHAR_REPAIR) colpm##pn = 0;
-
 
 #define TOGGLE_PLAYER(pn) \
     /* Read paddle */ \
@@ -732,11 +760,14 @@ void dvbi_routine_GameRunning(void)
     }
     else if (fs == 3)
     {
+#if 0        
+// stop game automatically after a few screens
         if (vblanks == 4)
         {
             idleInit = 1;
             OS.vvblkd = &dvbi_routine_GameIdleInit;
         }
+#endif            
     }
 
     fs--;
@@ -850,6 +881,8 @@ void dvbi_routine_GameIdle(void)
         /* Copy proper display list, advance to next coarse scroll */
         memcpy(dl, dlp, DL_SIZE - 3);
     }
+#if 0    
+/* Drone blowing up animation and sound */
     else if (fs == 1)
     {
         animation++;
@@ -880,6 +913,7 @@ void dvbi_routine_GameIdle(void)
         }
         hposShadow = hposDrone - 16;
     }
+#endif        
     else if (fs == 2)
     {
         if (vblanks == 0)
@@ -913,6 +947,8 @@ void dvbi_routine_GameIdle(void)
             }
             else //if (hposShadow & 0x01)
             {
+#if 0 
+// Daytime background color transitions               
                 if (hposShadow >= hposDrone)
                 {
                     OS.color4 = mainbgcolor--;
@@ -921,6 +957,7 @@ void dvbi_routine_GameIdle(void)
                 {
                     OS.color4 = mainbgcolor++;
                 }
+#endif
             }
         }
     }
@@ -965,12 +1002,141 @@ void dvbi_routine_GameIdleInit(void)
     /* JMP to XITVBV */
     __asm__("jmp $E462");
 }
+#if DO_LYRICS == 1
+/* --------------------------------------------------------------------------------------------- */
+/* Delayed VBI - MODE: Game Idle Initialization                                                  */
+/* --------------------------------------------------------------------------------------------- */
+void dvbi_routine_ShowLyrics(void)
+{
+    /* Switch to Idle State */
+    if (rmtplayCount < 5)
+    {
+#if RMT_RUN == 1  
+    RMTPlay;
+#endif      
+    }
+    rmtplayCount++;
+    if (rmtplayCount > 5) rmtplayCount = 0;
 
+    OS.color4 = mainbgcolor;
+
+    __asm__("jmp $E462");
+}
+
+void LyricWait(void)
+{
+        line = 0;
+        while (line++ != 48)
+        {
+            waitForVBLANK();
+        }
+}
+void LyricWait2(void)
+{
+        line = 0;
+        while (line++ != 96)
+        {
+            waitForVBLANK();
+        }
+}
+
+#endif
 /* --------------------------------------------------------------------------------------------- */
 /* Main loop                                                                                     */
 /* --------------------------------------------------------------------------------------------- */
 void main(void)
 {
+#if DO_LYRICS == 1
+
+#define LYRIC(lp, ls) \
+        memset(&rows[0], 0, 40); \
+        memcpy(&rows[0], lp, ls); \
+        LyricWait()
+#define LYRIC2(lp, ls) \
+        memset(&rows[0], 0, 40); \
+        memcpy(&rows[0], lp, ls); \
+        LyricWait2()
+
+    /* Display Lyrics to Music */
+
+    /* Copy the next display list to base DL List RAM */
+    waitForVBLANK();
+    memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
+    ANTIC.nmien = 0x00;
+    OS.vvblkd = &dvbi_routine_ShowLyrics;
+    OS.sdlst = (void *)DL_ADDR;
+    RMTInitIdle;
+    ANTIC.nmien = 0xC0;
+
+    for (;;)
+    {
+
+        line = 0;
+        while (line++ != 192)
+        {
+            waitForVBLANK();
+        }
+
+        LYRIC(ly1, 12);
+        LYRIC(ly2, 17);
+        LYRIC(ly1, 12);
+        LYRIC(ly3, 19);
+
+        LYRIC2(ly4, 38);
+        LYRIC2(ly5, 34);
+        LYRIC2(ly6, 38);
+        LYRIC2(ly7, 40);
+
+        LYRIC2(ly8, 36);
+        LYRIC2(ly9, 32);
+        LYRIC2(ly10, 36);
+        LYRIC2(ly11, 34);
+
+        line = 0;
+        while (line++ != 192)
+        {
+            waitForVBLANK();
+        }
+
+        LYRIC(ly1, 12);
+        LYRIC(ly2, 17);
+        LYRIC(ly1, 12);
+        LYRIC(ly3, 19);
+
+        LYRIC2(ly12, 36);
+        LYRIC2(ly13, 31);
+        LYRIC2(ly14, 33);
+        LYRIC2(ly15, 36);
+
+        LYRIC2(ly16, 32);
+        LYRIC2(ly17, 39);
+        LYRIC2(ly18, 31);
+        LYRIC2(ly19, 30);
+
+        memset(&rows[0], 0, 40);
+
+#if 0        
+        line = 0;
+        while (line++ != 48)
+        {
+            waitForVBLANK();
+        }
+
+        memset(&rows[0], 0, 40);
+        memcpy(&rows[0], ly1, 12);
+
+        line = 0;
+        while (line++ != 48)
+        {
+            waitForVBLANK();
+        }
+        memset(&rows[0], 0, 40);
+        memcpy(&rows[0], ly2, 17);
+#endif        
+    }
+    for(;;);
+#else    
+
     /* Initialize Terrain */
 #if 1  
     memset(terrain, 0, sizeof(terrain));
@@ -1214,4 +1380,6 @@ void main(void)
         }
 #endif            
     }
+#endif
+
 }
