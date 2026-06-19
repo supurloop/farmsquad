@@ -108,6 +108,7 @@ uint8_t terrain[TERRAIN_PAGES * NUM_ROWS *(NUM_COLUMNS - (ROW_ADDR_OFF << 1))];
 uint8_t *pterrain;
 uint8_t tline;
 uint8_t wsyncCount;
+uint8_t blowUp;
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros to convert single byte chars into double byte chars                                    */
@@ -307,30 +308,30 @@ uint8_t tline2;
 
 #define DO_LYRICS (1u)
 #if DO_LYRICS == 1
-const char *ly1 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x26" "arm" "\x33" "quad\x01\x01\x01";
-const char *ly2 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x22" "est\x00of\x00the\x00" "best\x01";
-const char *ly3 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x37ill\x00pass\x00the\x00test\x01";
+const char *ly1 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x26" "arm" "\x33" "quad\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+const char *ly2 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x22" "est\x00of\x00the\x00" "best\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+const char *ly3 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x37ill\x00pass\x00the\x00test\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 //                 1234567890123456789012345678901234567890
 const char *ly4 = "\x34hey\x00mutilate\x00thirst\x00\x0d\x00" "by\x00manly\x00" "drinks\x0e";
-const char *ly5 = "\x00\x00\x00\x2duscles\x00" "bulge\x00\x0d\x00they\x00" "cannot\x00think\x0e";
-const char *ly6 = "\x00\x37" "e\x00" "built\x00the\x00walls\x00\x0d\x00to\x00keep\x00them\x00out\x0e";
+const char *ly5 = "\x00\x00\x00\x2duscles\x00" "bulge\x00\x0d\x00they\x00" "cannot\x00think\x0e\x00\x00\x00";
+const char *ly6 = "\x00\x37" "e\x00" "built\x00the\x00walls\x00\x0d\x00to\x00keep\x00them\x00out\x0e\x00";
 //                 1234567890123456789012345678901234567890
 const char *ly7 = "\x21nd\x00still\x00we\x00hear\x00them\x00\x0d\x00rant\x00" "and\x00shout\x1a";
-const char *ly8 = "\x00\x02\x27ive\x00the\x00" "crops\x00\x0d\x00" "a\x00surge\x00of\x00height\x0e\x02";
-const char *ly9 = "\x00\x00\x00\x00\x02\x26" "eed\x00them\x00with\x00\x0d\x00" "electrolyes\x01\x02";
+const char *ly8 = "\x00\x02\x27ive\x00the\x00" "crops\x00\x0d\x00" "a\x00surge\x00of\x00height\x0e\x02\x00";
+const char *ly9 = "\x00\x00\x00\x00\x02\x26" "eed\x00them\x00with\x00\x0d\x00" "electrolyes\x01\x02\x00\x00\x00\x00";
 //                  1234567890123456789012345678901234567890
-const char *ly10 = "\x00\x34hey\x00" "fly\x00" "drones\x00\x0d\x00to\x00" "douse\x00our\x00" "crop\x0e";
-const char *ly11 = "\x00\x00\x00\x2fur\x00sworn\x00" "duty\x1f\x00\x0d\x00" "make\x00them\x00stop\x0e";
+const char *ly10 = "\x00\x34hey\x00" "fly\x00" "drones\x00\x0d\x00to\x00" "douse\x00our\x00" "crop\x0e\x00\x00";
+const char *ly11 = "\x00\x00\x00\x2fur\x00sworn\x00" "duty\x1f\x00\x0d\x00" "make\x00them\x00stop\x0e\x00\x00\x00";
 
-const char *ly12 = "\x00\x00\x25" "ach\x00" "day\x00tractors\x00\x0d\x00quickly\x00harvest\x0e";
-const char *ly13 = "\x00\x00\x00\x00\x24odging\x00rocks\x00\x0d\x00" "being\x00smartest\x0e";
-const char *ly14 = "\x00\x00\x00\x37ith\x00good\x00luck\x00\x0d\x00we\x00" "find\x00repairs\x0e";
-const char *ly15 = "\x00\x00\x22" "ecause\x00two\x00hits\x00\x0d\x00is\x00" "all\x00they\x00" "bear\x0e";
-const char *ly16 = "\x00\x00\x00\x00\x21\x00" "determined\x00search\x00\x0d\x00" "for\x00" "\x25\x2d\x30s\x0e";
+const char *ly12 = "\x00\x00\x25" "ach\x00" "day\x00tractors\x00\x0d\x00quickly\x00harvest\x0e\x00\x00";
+const char *ly13 = "\x00\x00\x00\x00\x24odging\x00rocks\x00\x0d\x00" "being\x00smartest\x0e\x00\x00\x00\x00";
+const char *ly14 = "\x00\x00\x00\x37ith\x00good\x00luck\x00\x0d\x00we\x00" "find\x00repairs\x0e\x00\x00\x00";
+const char *ly15 = "\x00\x00\x22" "ecause\x00two\x00hits\x00\x0d\x00is\x00" "all\x00they\x00" "bear\x0e\x00\x00";
+const char *ly16 = "\x00\x00\x00\x00\x21\x00" "determined\x00search\x00\x0d\x00" "for\x00" "\x25\x2d\x30s\x0e\x00\x00\x00\x00";
 //                  1234567890123456789012345678901234567890
 const char *ly17 = "\x34ogether\x00we\x00tune\x00\x0d\x00" "and\x00stop\x00their\x00spree\x0e";
-const char *ly18 = "\x00\x00\x00\x00\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x0e";
-const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01";
+const char *ly18 = "\x00\x00\x00\x00\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x0e\x00\x00\x00\x00";
+const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01\x00\x00\x00";
 #endif
 
 #if 0
@@ -606,6 +607,7 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
     if (((trigger == 0) && (lastTrigp##pn != 0)) || (newDirp##pn != lastDirp##pn)) \
     { \
       /* Yes, force move now */ \
+      blowUp = 1; \
       lastDirp##pn = newDirp##pn; \
       delayp##pn = PADDLE_STEER_DELAY; \
     } \
@@ -755,6 +757,43 @@ void dvbi_routine_GameRunning(void)
     }
     else if (fs == 3)
     {
+        /* Drone blowing up animation and sound */
+        if (blowUp != 0)
+        {
+            if (blowUp == 1) {
+                ufoVolume = 15;
+                //hposDrone = 120; 
+                blowUp++;
+            }
+            else if (blowUp == 2) {
+                GTIA_WRITE.sizep0 = 1;
+                GTIA_WRITE.sizep1 = 1;
+                GTIA_WRITE.sizep2 = 1;
+                GTIA_WRITE.sizep3 = 1;
+                //hposDrone = 120 - 4;
+                hposDrone -= 4;
+                blowUp++;
+            }
+            else if (blowUp == 3) {
+                GTIA_WRITE.sizep0 = 3;
+                GTIA_WRITE.sizep1 = 3;
+                GTIA_WRITE.sizep2 = 3;
+                GTIA_WRITE.sizep3 = 3;
+                //hposDrone = 120 - 12;
+                hposDrone -= 12;
+                blowUp++;
+            }
+            else {
+                /* Hide the drone */
+                GTIA_WRITE.sizep0 = 0;
+                GTIA_WRITE.sizep1 = 0;
+                GTIA_WRITE.sizep2 = 0;
+                GTIA_WRITE.sizep3 = 0;
+                hposDrone = 0;
+                hposShadow = 0;
+                blowUp = 0;
+            }
+        }
 #if 0        
 // stop game automatically after a few screens
         if (vblanks == 4)
@@ -773,6 +812,13 @@ void dvbi_routine_GameRunning(void)
         RMTPlay;
         //POKEY_WRITE.audf4 = tone;
         //POKEY_WRITE.audc4 = 0x80 | 2;
+        if (ufoVolume != 0)
+        {
+            POKEY_WRITE.audf4 = 32;
+            POKEY_WRITE.audc4 = ufoVolume;
+            ufoVolume--;
+        }
+
         #if 0
         if (rev)
         {
@@ -876,39 +922,15 @@ void dvbi_routine_GameIdle(void)
         /* Copy proper display list, advance to next coarse scroll */
         memcpy(dl, dlp, DL_SIZE - 3);
     }
-#if 0    
-/* Drone blowing up animation and sound */
+#if 1
     else if (fs == 1)
     {
-        animation++;
-        animation &= 0x03;
-        memcpy(p + (CHAR_REPAIR * CHAR_SET_SIZE), &repairsCharAnimation[animation], CHAR_SET_SIZE);
-        memcpy(p + (CHAR_EMP * CHAR_SET_SIZE), &empCharAnimation[animation], CHAR_SET_SIZE);
-        
-        GTIA_WRITE.sizep0 = animation;
-        GTIA_WRITE.sizep1 = animation;
-        GTIA_WRITE.sizep2 = animation;
-        GTIA_WRITE.sizep3 = animation;
-        if (animation == 0) {
-            ufoVolume = 15;
-            hposDrone = 120; 
-        }
-        else if (animation == 1) {
-            hposDrone = 120 - 4;
-        }
-        else if (animation == 2) {
-            GTIA_WRITE.sizep0 = 3;
-            GTIA_WRITE.sizep1 = 3;
-            GTIA_WRITE.sizep2 = 3;
-            GTIA_WRITE.sizep3 = 3;
-            hposDrone = 120 - 12;
-        }
-        else {
-            hposDrone = 0;
-        }
-        hposShadow = hposDrone - 16;
+        //animation++;
+        //animation &= 0x03;
+        //memcpy(p + (CHAR_REPAIR * CHAR_SET_SIZE), &repairsCharAnimation[animation], CHAR_SET_SIZE);
+        //memcpy(p + (CHAR_EMP * CHAR_SET_SIZE), &empCharAnimation[animation], CHAR_SET_SIZE);
     }
-#endif        
+#endif
     else if (fs == 2)
     {
         if (vblanks == 0)
@@ -983,12 +1005,6 @@ void dvbi_routine_GameIdle(void)
 #if RMT_RUN == 1  
     RMTPlay;
 #endif      
-        if (ufoVolume != 0)
-        {
-            POKEY_WRITE.audf4 = 32;
-            POKEY_WRITE.audc4 = ufoVolume;
-            ufoVolume--;
-        }
     }
     rmtplayCount++;
     if (rmtplayCount > 5) rmtplayCount = 0;
@@ -1032,21 +1048,19 @@ void dvbi_routine_ShowLyrics(void)
     __asm__("jmp $E462");
 }
 
-void LyricWait(void)
+uint8_t LyricWait(uint8_t vblanks)
 {
-        line = 0;
-        while (line++ != 48)
-        {
-            waitForVBLANK();
-        }
-}
-void LyricWait2(void)
-{
-        line = 0;
-        while (line++ != 96)
-        {
-            waitForVBLANK();
-        }
+    line = 0;
+    while (line != vblanks)
+    {
+        line++;
+        waitForVBLANK();
+        if (PEEK(PTRIG0) == 0) return 1;
+        if (PEEK(PTRIG1) == 0) return 1;
+        if (PEEK(PTRIG2) == 0) return 1;
+        if (PEEK(PTRIG3) == 0) return 1;
+    }
+    return 0;
 }
 
 #endif
@@ -1058,13 +1072,12 @@ void main(void)
 #if DO_LYRICS == 1
 
 #define LYRIC(lp, ls) \
-        memset(&rows[0], 0, 40); \
-        memcpy(&rows[0], lp, ls); \
-        LyricWait()
+        memcpy(&rows[0], lp, 40); \
+        if (LyricWait(48)) goto lyricBreak;
+
 #define LYRIC2(lp, ls) \
-        memset(&rows[0], 0, 40); \
-        memcpy(&rows[0], lp, ls); \
-        LyricWait2()
+        memcpy(&rows[0], lp, 40); \
+        if (LyricWait(96)) goto lyricBreak;
 
     /* Display Lyrics to Music */
 
@@ -1086,11 +1099,7 @@ void main(void)
 
     //for (;;)
     {
-        line = 0;
-        while (line++ != 192)
-        {
-            waitForVBLANK();
-        }
+        LyricWait(192);
 
         LYRIC(ly1, 26);
         LYRIC(ly2, 28);
@@ -1109,11 +1118,7 @@ void main(void)
 
         memset(&rows[0], 0, 40);
 
-        line = 0;
-        while (line++ != 192)
-        {
-            waitForVBLANK();
-        }
+        LyricWait(192);
 
         LYRIC(ly1, 26);
         LYRIC(ly2, 28);
@@ -1132,6 +1137,7 @@ void main(void)
 
         memset(&rows[0], 0, 40);
     }
+lyricBreak:    
     //for(;;);
 //#else    
 
