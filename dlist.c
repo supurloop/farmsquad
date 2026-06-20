@@ -33,7 +33,7 @@
 
 const void dlistlyrics =
 {
-    DL_DLI(DL_BLK8),
+    DL_BLK8,
     DL_BLK8,
     DL_BLK8,
     DL_BLK8,
@@ -43,7 +43,7 @@ const void dlistlyrics =
     DL_BLK8,
     DL_BLK8,
     DL_LMS(DL_CHR40x8x1),
-    &rows[0],
+    &notice[0],
     DL_JVB,
     0x0600,
 };

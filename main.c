@@ -51,7 +51,7 @@
 #include "dlist.h"
 #include "main.h"
 #include "rand.h"
-#include "terrain.h"
+//#include "terrain.h"
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros                                                                                        */
@@ -104,11 +104,9 @@
 /* --------------------------------------------------------------------------------------------- */
 /* Terrain Cache                                                                                 */
 /* --------------------------------------------------------------------------------------------- */
-uint8_t terrain[TERRAIN_PAGES * NUM_ROWS *(NUM_COLUMNS - (ROW_ADDR_OFF << 1))];
-uint8_t *pterrain;
-uint8_t tline;
 uint8_t wsyncCount;
 uint8_t blowUp;
+uint8_t blown;
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros to convert single byte chars into double byte chars                                    */
@@ -236,6 +234,7 @@ const char framsquad[FARM_SQUAD_LINES][NUM_PLAY_COLUMNS] =
 /* 1KB Aligned for Antic Display List */
 #pragma bss-name (push, "ROWBSS")
 uint8_t rows[NUM_ROWS][NUM_COLUMNS];
+uint8_t notice[NUM_COLUMNS];
 #pragma bss-name (pop)
 
 /* Frequently used variables - Put in Zero Page */
@@ -244,6 +243,7 @@ uint8_t gstate;
 unsigned char ifs;
 unsigned char fs;
 unsigned char line;
+unsigned char dline;
 unsigned char cline;
 uint8_t rmtplayCount;
 unsigned char animation;
@@ -271,6 +271,9 @@ unsigned char *dlp = &dlist;
 
 uint8_t hposDrone;
 uint8_t hposShadow;
+uint8_t hposShadowDelta;
+uint8_t hposShadowCounts;
+uint8_t day = 1;
 
 #define DEFINE_PLAYER(pn) \
 uint8_t hposp##pn; \
@@ -280,7 +283,8 @@ uint8_t delayp##pn; \
 uint8_t lastTrigp##pn; \
 uint16_t trigCountp##pn; \
 uint8_t lastDirp##pn; \
-uint8_t newDirp##pn;
+uint8_t newDirp##pn; \
+uint8_t blowUp##pn;
 
 DEFINE_PLAYER(0)
 DEFINE_PLAYER(1)
@@ -288,17 +292,17 @@ DEFINE_PLAYER(2)
 DEFINE_PLAYER(3)
 
 uint8_t rev;
-uint8_t now;
-
 uint8_t volume;
-uint8_t tone = 16;
+uint8_t tone;
 uint8_t ramp;
+
 uint8_t droneTarget;
 uint8_t targeted;
 uint16_t droneTargetCount;
 uint8_t vblanks;
 uint8_t idleInit;
 uint8_t runInit;
+uint8_t dayInit;
 
 /* Terrain making variables */
 uint8_t column;
@@ -329,7 +333,7 @@ const char *ly14 = "\x00\x00\x00\x37ith\x00good\x00luck\x00\x0d\x00we\x00" "find
 const char *ly15 = "\x00\x00\x22" "ecause\x00two\x00hits\x00\x0d\x00is\x00" "all\x00they\x00" "bear\x0e\x00\x00";
 const char *ly16 = "\x00\x00\x00\x00\x21\x00" "determined\x00search\x00\x0d\x00" "for\x00" "\x25\x2d\x30s\x0e\x00\x00\x00\x00";
 //                  1234567890123456789012345678901234567890
-const char *ly17 = "\x34ogether\x00we\x00tune\x00\x0d\x00" "and\x00stop\x00their\x00spree\x0e";
+const char *ly17 = "\x34ogether\x00we\x00" "fire\x00\x0d\x00" "and\x00stop\x00their\x00spree\x0e";
 const char *ly18 = "\x00\x00\x00\x00\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x0e\x00\x00\x00\x00";
 const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01\x00\x00\x00";
 #endif
@@ -474,9 +478,41 @@ va##line: \
   __asm__("lda #%s", d); \
   __asm__("sta $d40a"); \
   __asm__("sta $d00d"); \
-  __asm__("sta $d010"); \
   __asm__("sta $d00e"); \
+  __asm__("sta $d00f"); \
+  __asm__("sta $d010");
+
+#define COMBINE_SPRITE_SET_PLAYER_1(d, e) \
+  __asm__("lda #%s", d); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d00d"); \
+  __asm__("lda #%s", e); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d00d");
+
+  #define COMBINE_SPRITE_SET_PLAYER_2(d, e) \
+  __asm__("lda #%s", d); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d00e"); \
+  __asm__("lda #%s", e); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d00e");
+
+  #define COMBINE_SPRITE_SET_PLAYER_3(d, e) \
+  __asm__("lda #%s", d); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d00f"); \
+  __asm__("lda #%s", e); \
+  __asm__("sta $d40a"); \
   __asm__("sta $d00f");
+
+  #define COMBINE_SPRITE_SET_PLAYER_4(d, e) \
+  __asm__("lda #%s", d); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d010"); \
+  __asm__("lda #%s", e); \
+  __asm__("sta $d40a"); \
+  __asm__("sta $d010");
 
 #define COMBINE_SPRITES(t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11) \
   ANTIC.wsync = 0; \
@@ -498,7 +534,13 @@ va##line: \
   COMBINE_SPRITE_SET_ROW(24); \
   COMBINE_SPRITE_SET_ROW(24); \
   COMBINE_SPRITE_SET_ROW_END(0); \
+  COMBINE_SPRITE_SET_PLAYER_1(255,0); \
+  COMBINE_SPRITE_SET_PLAYER_2(195,0); \
+  COMBINE_SPRITE_SET_PLAYER_3(219,0); \
+  COMBINE_SPRITE_SET_PLAYER_4(165,0); \
+  COMBINE_SPRITE_SET_ROW_END(0); \
   ANTIC.wsync = 0;
+
 
 #define COMBINE_SPRITES1() \
   COMBINE_SPRITES(94, 129, 94,   66, 0, 66, 0, 66, 0, 66, 0, 66)
@@ -574,7 +616,7 @@ void dli_routine##vs(void) { \
     } \
     UFO_SPRITE_SET_ALL##da(); \
     SHADOW_SPRITE_SET_ALL(); \
-    wsyncCount = 112; \
+    wsyncCount = 108; \
     while (wsyncCount != 0) { \
         wsyncCount--; \
         ANTIC.wsync = 0; \
@@ -607,7 +649,6 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
     if (((trigger == 0) && (lastTrigp##pn != 0)) || (newDirp##pn != lastDirp##pn)) \
     { \
       /* Yes, force move now */ \
-      blowUp = 1; \
       lastDirp##pn = newDirp##pn; \
       delayp##pn = PADDLE_STEER_DELAY; \
     } \
@@ -624,17 +665,24 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
 
 uint8_t *phrc;
 uint8_t *phrct;
+uint8_t *phrd; /* Drone Row Pointer */
 
-#define HIT_PLAYER(pn) \
+#define HIT_PLAYER(pn) if (hposp##pn != 0) { \
     paddle = (hposp##pn - (PLAYER_MIN_HPOS - PLAYER_WIDTH)) >> 2; \
     phrct = phrc + paddle; \
     if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score++; } \
-    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; OS.vvblkd = &dvbi_routine_GameIdleInit; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
-    else if (*phrct == CHAR_REPAIR) colpm##pn = 0; \
+    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
+    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; } \
+    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; } \
     phrct++; \
     if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score++; } \
-    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; OS.vvblkd = &dvbi_routine_GameIdleInit; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
-    else if (*phrct == CHAR_REPAIR) colpm##pn = 0;
+    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
+    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; } \
+    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; } }
+
+#define BLOW_PLAYER(pn) { \
+    blowUp##pn = (hposp##pn == 0) && (hposm##pn == 0); \
+    if ((hposp##pn != 0) && (hposm##pn != 0) && (lastTrigp##pn == 0) && ((colpm##pn & 0xF0) == (HUE_BLUE2 << 4))) { blowUp##pn = 1; } }
 
 #define TOGGLE_PLAYER(pn) \
     /* Read paddle */ \
@@ -659,13 +707,13 @@ uint8_t *phrct;
         trigCountp##pn++; \
         if ((trigCountp##pn > 180) && (hposp##pn != 0)) { \
             trigCountp##pn = 0; \
-            runInit = 1; \
-            OS.vvblkd = &dvbi_routine_GameIdleInit; \
+            dayInit = 1; \
         } \
     } \
     lastTrigp##pn = trigger;
 
 void dvbi_routine_GameIdleInit(void);
+void dvbi_routine_Notice(void);
 
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Started                                                              */
@@ -674,24 +722,35 @@ void dvbi_routine_GameRunning(void)
 {
     GTIA_WRITE.prior = PRIOR_P03_PF03;
 
-    if (targeted == 0)
+    if (blown == 0)
     {
-      if ((droneTarget > hposDrone)) { hposDrone++; hposShadow = hposDrone - 16; }
-      else if ((droneTarget < hposDrone)) { hposDrone--; hposShadow = hposDrone - 16; }
-      else 
-      {
-        targeted = (rf() & 0x03) + 1;
-      }
-    }
-    else if (targeted == 1)
-    {
-        hposDrone++;
-        hposShadow = hposDrone - 16;
-    }
-    else if (targeted == 2)
-    {
-        hposDrone--;
-        hposShadow = hposDrone - 16;
+        if (targeted == 0)
+        {
+        if ((droneTarget > hposDrone))
+        {
+            hposDrone++;
+            hposShadow = hposShadowDelta + hposDrone - 16;
+        }
+        else if ((droneTarget < hposDrone))
+        {
+            hposDrone--;
+            hposShadow = hposShadowDelta + hposDrone - 16;
+        }
+        else 
+        {
+            targeted = (rf() & 0x03) + 1;
+        }
+        }    
+        else if (targeted == 1)
+        {
+            hposDrone++;
+            hposShadow = hposShadowDelta + hposDrone - 16;
+        }
+        else if (targeted == 2)
+        {
+            hposDrone--;
+            hposShadow = hposShadowDelta + hposDrone - 16;
+        }
     }
 
     /* Coarse scroll? */
@@ -699,14 +758,7 @@ void dvbi_routine_GameRunning(void)
     {
       #if 1
         rp = &rows[line][3];
-        memcpy(rp, pterrain, NUM_COLUMNS - 6);
-        tline++;
-        pterrain += NUM_COLUMNS - 6;
-        if (tline >= (TERRAIN_PAGES * NUM_ROWS))
-        {
-            tline = 0;
-            pterrain = terrain;
-        }
+        memset(rp, 1, NUM_COLUMNS - 6);
        #endif     
     }
     else if (fs == 0x07)
@@ -746,6 +798,21 @@ void dvbi_routine_GameRunning(void)
             cline--;
             phrc -= NUM_COLUMNS;
         }
+
+        if (dline == 0)
+        {
+            /* Yes, start back at beginning */
+            dline = NUM_ROWS - 1;
+            phrd = &rows[NUM_ROWS - 1][0];
+        }
+        else
+        {
+            dline--;
+            phrd -= NUM_COLUMNS;
+        }
+
+        //memset(&rows[line], 1, NUM_COLUMNS);
+
 #endif            
     }
     else if (fs == 2)
@@ -792,16 +859,102 @@ void dvbi_routine_GameRunning(void)
                 hposDrone = 0;
                 hposShadow = 0;
                 blowUp = 0;
+                blown = 1;
+                dayInit = 1;
+                //OS.vvblkd = &dvbi_routine_Notice;
             }
         }
-#if 0        
-// stop game automatically after a few screens
-        if (vblanks == 4)
+        else
         {
-            idleInit = 1;
-            OS.vvblkd = &dvbi_routine_GameIdleInit;
+#if 1            
+            /* Move shadoow to show day going by */
+            hposShadowCounts++;
+            if (hposShadowCounts > 16)
+            {
+                hposShadowCounts = 0;;
+                hposShadowDelta++;
+                if (hposShadowDelta >= 48)
+                {
+                    /* Shadow reached end of day!!  */
+                    idleInit = 1;
+                }
+                else if (hposShadowDelta > 40)
+                {
+                    mainbgcolor = MAIN_COLOR_START - (hposShadowDelta - 40);
+                    OS.color4 = mainbgcolor;
+                }
+            }
+#endif                
         }
-#endif            
+    }
+    else if (fs == 5)
+    {
+        /* Drone eats crops, randomly drops items */
+        if ((hposDrone >= PLAYER_MIN_HPOS) && (hposDrone < PLAYER_MAX_HPOS))
+        {
+            rev = ((hposDrone - PLAYER_MIN_HPOS) >> 2) + 3;
+            phrd += rev;
+            rfv(ramp);
+            if (ramp < 40)
+            {
+                *phrd = CHAR_ROCK;
+                //rows[dline][rev] = CHAR_ROCK;
+            }
+            else if (ramp < 50)
+            {
+                *phrd = CHAR_REPAIR;
+                //rows[dline][rev] = CHAR_REPAIR;
+            }
+            else if (ramp < 55)
+            {
+                *phrd = CHAR_EMP | 0x80;
+                //rows[dline][rev] = CHAR_EMP | 0x80;
+            }
+            else
+            {
+                *phrd = CHAR_BLANK;
+                //rows[dline][rev] = 0;
+            }
+            phrd++;
+            rev++;
+            rfv(ramp);
+            if (ramp > 214)
+            {
+                *phrd = CHAR_ROCK;
+                //rows[dline][rev] = CHAR_ROCK;
+            }
+            else if (ramp > 204)
+            {
+                *phrd = CHAR_REPAIR;
+                //rows[dline][rev] = CHAR_REPAIR;
+            }
+            else if (ramp > 199)
+            {
+                *phrd = CHAR_EMP | 0x80;
+                //rows[dline][rev] = CHAR_EMP | 0x80;
+            }
+            else
+            {
+                *phrd = CHAR_BLANK;
+                //rows[dline][rev] = 0;
+            }
+            phrd -= rev;
+        }
+    }
+    else if (fs == 6)
+    {
+        /* Check for blow up drone */
+        if ((blowUp == 0) && (blown == 0))
+        {
+            BLOW_PLAYER(0);
+            BLOW_PLAYER(1);
+            BLOW_PLAYER(2);
+            BLOW_PLAYER(3);
+            if (blowUp0 && blowUp1 && blowUp2 && blowUp3)
+            {
+                blowUp = 1;
+            }
+        }
     }
 
     fs--;
@@ -810,37 +963,36 @@ void dvbi_routine_GameRunning(void)
     if (rmtplayCount < 5)
     {
         RMTPlay;
-        //POKEY_WRITE.audf4 = tone;
-        //POKEY_WRITE.audc4 = 0x80 | 2;
         if (ufoVolume != 0)
         {
+            /* Blow up sound effect */
             POKEY_WRITE.audf4 = 32;
             POKEY_WRITE.audc4 = ufoVolume;
             ufoVolume--;
         }
-
-        #if 0
-        if (rev)
+#if 0
+        else if (rev)
         {
           POKEY_WRITE.audf4 = tone;
-          POKEY_WRITE.audc4 = 0x80 | volume >> 4;
+          POKEY_WRITE.audc4 = 0x80 | (volume >> 4);
           if (ramp)
           {
-            if (volume < 127) volume+=2;
+            if (volume < 127) volume += 2;
           }
           else if (volume > 16) volume-=3;
         }
         else
         {
           POKEY_WRITE.audf4 = tone;
-          POKEY_WRITE.audc4 = 0x80 | volume >> 4;
+          POKEY_WRITE.audc4 = 0x80 | (volume >> 4);
           if (ramp)
           {
-            if (volume < 127) volume+=2;
+            if (volume < 127) volume += 2;
           }
           else if (volume > 16) volume -= 3;
         }
 #endif
+
     }
     rmtplayCount++;
     if (rmtplayCount > 5) rmtplayCount = 0;
@@ -865,13 +1017,11 @@ void dvbi_routine_GameRunning(void)
     if (thposp2 == 0) thposp2 = PLAYER_MIN_HPOS;
     if (thposp3 == 0) thposp3 = PLAYER_MIN_HPOS;
 
-    MOVE_PLAYER(0, PLAYER_MIN_HPOS, hposp1 - PLAYER_WIDTH);
-    MOVE_PLAYER(1, thposp0, hposp2 - PLAYER_WIDTH);
-    MOVE_PLAYER(2, hposp1 + PLAYER_WIDTH, thposp3);
-    MOVE_PLAYER(3, hposp2 + PLAYER_WIDTH, PLAYER_MAX_HPOS);
+    MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
 #endif
-
-    now = 1;
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -883,24 +1033,12 @@ void dvbi_routine_GameRunning(void)
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameIdle(void)
 {
-    //POKE(BGCOLOR, 100);
     GTIA_WRITE.prior = PRIOR_P03_PF03;
-    //vblanks++;
 
     /* Coarse scroll? */
     if (fs == 0)
     {
-      #if 0
-        rp = &rows[line][3];
-        memcpy(rp, pterrain, NUM_COLUMNS - 6);
-        tline++;
-        pterrain += NUM_COLUMNS - 6;
-        if (tline >= (TERRAIN_PAGES * NUM_ROWS))
-        {
-            tline = 0;
-            pterrain = terrain;
-        }
-       #endif     
+
     }
     else if (fs == 0x07)
     {
@@ -922,15 +1060,6 @@ void dvbi_routine_GameIdle(void)
         /* Copy proper display list, advance to next coarse scroll */
         memcpy(dl, dlp, DL_SIZE - 3);
     }
-#if 1
-    else if (fs == 1)
-    {
-        //animation++;
-        //animation &= 0x03;
-        //memcpy(p + (CHAR_REPAIR * CHAR_SET_SIZE), &repairsCharAnimation[animation], CHAR_SET_SIZE);
-        //memcpy(p + (CHAR_EMP * CHAR_SET_SIZE), &empCharAnimation[animation], CHAR_SET_SIZE);
-    }
-#endif
     else if (fs == 2)
     {
         if (vblanks == 0)
@@ -1018,15 +1147,37 @@ void dvbi_routine_GameIdle(void)
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameIdleInit(void)
 {
-    /* Switch to Idle State */
-//    if (idleInit == 0)
-//    {
-//        POKE(BGCOLOR, 0);
-//        OS.vvblkd = &dvbi_routine_GameIdle;
-//    }
     /* JMP to XITVBV */
     __asm__("jmp $E462");
 }
+
+/* --------------------------------------------------------------------------------------------- */
+/* Delayed VBI - MODE: Show Notice                                                               */
+/* --------------------------------------------------------------------------------------------- */
+void dvbi_routine_Notice(void)
+{
+    /* Switch to Idle State */
+    if (rmtplayCount < 5)
+    {
+#if RMT_RUN == 1  
+    RMTPlay;
+#endif      
+    }
+    rmtplayCount++;
+    if (rmtplayCount > 5) rmtplayCount = 0;
+
+    vblanks++;
+    if (vblanks == 0)
+    {
+        day++;
+        runInit = 1; 
+        //OS.vvblkd = &dvbi_routine_GameIdleInit; 
+
+    }
+
+    __asm__("jmp $E462");
+}
+
 #if DO_LYRICS == 1
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Idle Initialization                                                  */
@@ -1072,11 +1223,11 @@ void main(void)
 #if DO_LYRICS == 1
 
 #define LYRIC(lp, ls) \
-        memcpy(&rows[0], lp, 40); \
+        memcpy(&notice[0], lp, 40); \
         if (LyricWait(48)) goto lyricBreak;
 
 #define LYRIC2(lp, ls) \
-        memcpy(&rows[0], lp, 40); \
+        memcpy(&notice[0], lp, 40); \
         if (LyricWait(96)) goto lyricBreak;
 
     /* Display Lyrics to Music */
@@ -1116,7 +1267,7 @@ void main(void)
         LYRIC2(ly10, 38);
         LYRIC2(ly11, 37);
 
-        memset(&rows[0], 0, 40);
+        memset(&notice[0], 0, 40);
 
         LyricWait(192);
 
@@ -1135,21 +1286,14 @@ void main(void)
         LYRIC2(ly18, 35);
         LYRIC2(ly19, 37);
 
-        memset(&rows[0], 0, 40);
+        memset(&notice[0], 0, 40);
     }
 lyricBreak:    
-    //for(;;);
-//#else    
 
     /* Initialize Terrain */
 #if 1
     RMTStop;
     ANTIC.nmien = 0x00;
-
-    memset(terrain, 0, sizeof(terrain));
-    InitTerrain();    
-    pterrain = terrain;
-    tline = 0;
 #endif
 
     /* Generate rock walls */
@@ -1180,8 +1324,10 @@ lyricBreak:
     line = 0;
     fs = 7;
     ANTIC.vscrol = fs;
+    dline = 5;
     cline = 25;
     phrc = &rows[cline][0];
+    phrd = &rows[dline][0];
 
     /* Initialize position of players */
     lastTrigp0 = 1;
@@ -1328,11 +1474,16 @@ lyricBreak:
             line = 0;
             fs = 7;
             ANTIC.vscrol = fs;
+            dline = 5;
             cline = 24;
             phrc = &rows[cline][0];
+            phrd = &rows[dline][0];
 
             ANTIC.nmien = 0xC0;
 #endif                
+            day = 1;
+            hposShadowDelta = 0;
+            hposShadowCounts = 0;
             idleInit = 0;
         }
         else if (runInit == 1)
@@ -1343,6 +1494,13 @@ lyricBreak:
 #if RMT_RUN == 1      
             RMTInitRun;
 #endif
+            hposDrone = 120;
+            hposShadow = hposDrone - 16;
+            hposShadowDelta = 0;
+            hposShadowCounts = 0;
+            blowUp = 0;
+            blown = 0;
+
             lastTrigp0 = 1;
             lastTrigp1 = 1;
             lastTrigp2 = 1;
@@ -1367,27 +1525,68 @@ lyricBreak:
             line = 0;
             fs = 7;
             ANTIC.vscrol = fs;
+            dline = 5;
             cline = 25;
             phrc = &rows[cline][0];
+            phrd = &rows[dline][0];
             vblanks = 0;
+
+            /* Initialize playfield colors */
+            OS.color0 = PF0_COLOR;
+            OS.color1 = PF1_COLOR;
+            OS.color2 = PF2_COLOR;
+            OS.color3 = PF3_COLOR;
+            mainbgcolor = MAIN_COLOR_START;
+            OS.color4 = mainbgcolor;
+
+            /* Initialize and sitch to custom character set @ CS_ADDR */
+            OS.chbas = CS_ADDR_HI;
+
             ANTIC.nmien = 0xC0;
 #endif                
             runInit = 0;
         }
-#if 0
-        if (now)
+        else if (dayInit == 1)
         {
-            now = 0;
-            droneTargetCount++;
-            if (droneTargetCount == 320) { targeted = 0; droneTarget = hposp0 - 4; }
-            else if (droneTargetCount == 640) { targeted = 0; droneTarget = hposp1 - 4; }
-            else if (droneTargetCount == 960) { targeted = 0; droneTarget = hposp2 - 4; }
-            else if (droneTargetCount == 1280) { targeted = 0; droneTarget = hposp3 - 4; }
+            dayInit = 0;
+            vblanks = 0;
+            waitForVBLANK();
+            ANTIC.nmien = 0x00;
+            memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
+            OS.vvblkd = &dvbi_routine_Notice;
 
-            if (droneTargetCount > 1280) droneTargetCount = 0;
+            memset(&notice[0], 0, 40);
+
+            //notice[28] = ((day / 100) % 10 << 1) + CHAR_0;
+            //notice[29] = scoreStr[28] + 1;
+
+            //notice[30] = ((day / 10) % 10 << 1) + CHAR_0;
+            //notice[31] = notice[30] + 1;
+
+            notice[20] = ((day / 100) % 10) + 16;
+            notice[21] = ((day / 10) % 10) + 16;
+            notice[22] = (day % 10) + 16;
+
+            memcpy(&notice[16], "\x24" "ay", 3);
+
+            OS.color0 = 0;
+            //OS.color1 = 0;
+            OS.color2 = 0;
+            OS.color3 = 0;
+            OS.color4 = 0;
+            OS.chbas = 0xE0;
+
+            ANTIC.nmien = 0xC0;
         }
+
+#if 1
+        droneTargetCount++;
+        if ((droneTargetCount == 320) && (hposp0 != 0)) { targeted = 0; droneTarget = hposp0 - 4; }
+        else if ((droneTargetCount == 640) && (hposp1 != 0)) { targeted = 0; droneTarget = hposp1 - 4; }
+        else if ((droneTargetCount == 960) && (hposp2 != 0)) { targeted = 0; droneTarget = hposp2 - 4; }
+        else if ((droneTargetCount == 1280) && (hposp3 != 0)) { targeted = 0; droneTarget = hposp3 - 4; }
+
+        if (droneTargetCount > 1280) droneTargetCount = 0;
 #endif            
     }
-//#endif
-
 }

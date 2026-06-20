@@ -120,6 +120,7 @@ typedef enum
 } SSFHexCase_t;
 
 extern uint8_t rows[NUM_ROWS][NUM_COLUMNS];
+extern uint8_t notice[NUM_COLUMNS];
 
 /* Terrain */
 extern uint8_t column;
