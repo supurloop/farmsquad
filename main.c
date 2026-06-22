@@ -107,6 +107,7 @@
 uint8_t wsyncCount;
 uint8_t blowUp;
 uint8_t blown;
+uint8_t gameEndType; // 0 not ended, 1 = hit rock, 2 end of day
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros to convert single byte chars into double byte chars                                    */
@@ -313,7 +314,7 @@ uint8_t tline2;
 
 #define DO_LYRICS (1u)
 #if DO_LYRICS == 1
-//const char *ly0 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" "by\x00\x33upurloop\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+const char *ly0 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" "by\x00\x33upurloop\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly1 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x26" "arm" "\x33" "quad\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly2 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x22" "est\x00of\x00the\x00" "best\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly3 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x37ill\x00pass\x00the\x00test\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
@@ -1013,27 +1014,7 @@ void dvbi_routine_GameRunning(void)
     rmtplayCount++;
     if (rmtplayCount > 5) rmtplayCount = 0;
 
-#if 0
-    if (hposp0 == 0) thposp0 = PLAYER_MIN_HPOS;
-    else thposp0 = hposp0 + PLAYER_WIDTH;
-
-    if (hposp1 == 0)
-    {
-        thposp0 = PLAYER_MIN_HPOS;
-    }
-    else
-    {
-        thposp0 = hposp0 + PLAYER_WIDTH;
-    }
-
-    if (hposp3 == 0) thposp3 = PLAYER_MAX_HPOS;
-    else thposp3 = hposp3 - PLAYER_WIDTH;
-    
-    if (thposp1 == 0) thposp1 = PLAYER_MIN_HPOS;
-    if (thposp2 == 0) thposp2 = PLAYER_MIN_HPOS;
-    if (thposp3 == 0) thposp3 = PLAYER_MIN_HPOS;
-
-#endif
+    /* Player positions are updated every vertical blank */
     MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
@@ -1266,11 +1247,10 @@ void main(void)
 
     //for (;;)
     {
-        //memcpy(&notice[0], ly0, 40);
-        //LyricWait(96);
-        //memset(&notice[0], 0, 40);
-        //LyricWait(96);
-        LyricWait(192);
+        memcpy(&notice[0], ly0, 40);
+        LyricWait(96);
+        memset(&notice[0], 0, 40);
+        LyricWait(96);
 
         LYRIC(ly1, 26);
         LYRIC(ly2, 28);
@@ -1516,9 +1496,10 @@ lyricBreak:
 #if 1
             ANTIC.nmien = 0x00;
             
-#if RMT_RUN == 1      
+#if RMT_RUN == 1
             RMTInitRun;
 #endif
+
             hposDrone = 120;
             hposShadow = hposDrone - 16;
             hposShadowDelta = 0;
