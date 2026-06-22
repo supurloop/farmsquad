@@ -276,6 +276,7 @@ uint8_t hposShadowCounts;
 uint8_t day = 1;
 
 #define DEFINE_PLAYER(pn) \
+uint8_t pactive##pn; \
 uint8_t hposp##pn; \
 uint8_t hposm##pn; \
 uint8_t colpm##pn; \
@@ -312,11 +313,12 @@ uint8_t tline2;
 
 #define DO_LYRICS (1u)
 #if DO_LYRICS == 1
+//const char *ly0 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" "by\x00\x33upurloop\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly1 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x26" "arm" "\x33" "quad\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly2 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x22" "est\x00of\x00the\x00" "best\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly3 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x37ill\x00pass\x00the\x00test\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 //                 1234567890123456789012345678901234567890
-const char *ly4 = "\x34hey\x00mutilate\x00thirst\x00\x0d\x00" "by\x00manly\x00" "drinks\x0e";
+const char *ly4 = "\x34hey\x00mutilate\x00thirst\x00\x0d\x00" "by\x00" "energy\x00" "drink\x0e";
 const char *ly5 = "\x00\x00\x00\x2duscles\x00" "bulge\x00\x0d\x00they\x00" "cannot\x00think\x0e\x00\x00\x00";
 const char *ly6 = "\x00\x37" "e\x00" "built\x00the\x00walls\x00\x0d\x00to\x00keep\x00them\x00out\x0e\x00";
 //                 1234567890123456789012345678901234567890
@@ -325,7 +327,7 @@ const char *ly8 = "\x00\x02\x27ive\x00the\x00" "crops\x00\x0d\x00" "a\x00surge\x
 const char *ly9 = "\x00\x00\x00\x00\x02\x26" "eed\x00them\x00with\x00\x0d\x00" "electrolyes\x01\x02\x00\x00\x00\x00";
 //                  1234567890123456789012345678901234567890
 const char *ly10 = "\x00\x34hey\x00" "fly\x00" "drones\x00\x0d\x00to\x00" "douse\x00our\x00" "crop\x0e\x00\x00";
-const char *ly11 = "\x00\x00\x00\x2fur\x00sworn\x00" "duty\x1f\x00\x0d\x00" "make\x00them\x00stop\x0e\x00\x00\x00";
+const char *ly11 = "\x00\x00\x00\x00\x2fur\x00sworn\x00" "duty\x00\x0d\x00" "make\x00them\x00stop\x0e\x00\x00\x00";
 
 const char *ly12 = "\x00\x00\x25" "ach\x00" "day\x00tractors\x00\x0d\x00quickly\x00harvest\x0e\x00\x00";
 const char *ly13 = "\x00\x00\x00\x00\x24odging\x00rocks\x00\x0d\x00" "being\x00smartest\x0e\x00\x00\x00\x00";
@@ -638,7 +640,7 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
 
 #define MOVE_PLAYER(pn, lb, ub) \
     /* Read paddle */ \
-    if (hposp##pn != 0) { \
+    if ((pactive##pn != 0) && (hposp##pn != 0)) { \
     trigger = PEEK(PTRIG##pn); \
     paddle = PEEK(PADDL##pn); \
     /* Determine new steering direction */ \
@@ -681,7 +683,7 @@ uint8_t *phrd; /* Drone Row Pointer */
     else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; } }
 
 #define BLOW_PLAYER(pn) { \
-    blowUp##pn = (hposp##pn == 0) && (hposm##pn == 0); \
+    blowUp##pn = !pactive##pn; \
     if ((hposp##pn != 0) && (hposm##pn != 0) && (lastTrigp##pn == 0) && ((colpm##pn & 0xF0) == (HUE_BLUE2 << 4))) { blowUp##pn = 1; } }
 
 #define TOGGLE_PLAYER(pn) \
@@ -690,22 +692,25 @@ uint8_t *phrd; /* Drone Row Pointer */
     if ((trigger == 1) && (lastTrigp##pn != trigger)) \
     { \
         if (trigCountp##pn < 15) { \
-            if (hposp##pn == 0) \
+            POKE(77, 0); \
+            if (pactive##pn == 0) \
             { \
                 hposp##pn = PLAYER##pn##_DFL_HPOS; \
                 hposm##pn = PLAYER##pn##_DFL_HPOS + 2; \
+                pactive##pn = 1; \
             } \
             else \
             { \
                 hposm##pn = 0; \
                 hposp##pn = 0; \
+                pactive##pn = 0; \
             } \
         } \
         trigCountp##pn = 0; \
     } \
     else if (trigger == 0) { \
         trigCountp##pn++; \
-        if ((trigCountp##pn > 180) && (hposp##pn != 0)) { \
+        if ((trigCountp##pn > 180) && (pactive##pn != 0)) { \
             trigCountp##pn = 0; \
             dayInit = 1; \
         } \
@@ -714,6 +719,8 @@ uint8_t *phrd; /* Drone Row Pointer */
 
 void dvbi_routine_GameIdleInit(void);
 void dvbi_routine_Notice(void);
+
+#define SET_ACTIVE_PLAYER_POS(pn,pos) if (pactive##pn != 0) { hposm##pn = pos; hposp##pn = pos; }
 
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Started                                                              */
@@ -858,10 +865,13 @@ void dvbi_routine_GameRunning(void)
                 GTIA_WRITE.sizep3 = 0;
                 hposDrone = 0;
                 hposShadow = 0;
-                blowUp = 0;
                 blown = 1;
-                dayInit = 1;
+                blowUp++;
                 //OS.vvblkd = &dvbi_routine_Notice;
+            }
+            if (blowUp > 16)
+            {
+                dayInit = 1;                
             }
         }
         else
@@ -890,7 +900,7 @@ void dvbi_routine_GameRunning(void)
     else if (fs == 5)
     {
         /* Drone eats crops, randomly drops items */
-        if ((hposDrone >= PLAYER_MIN_HPOS) && (hposDrone < PLAYER_MAX_HPOS))
+        if (hposDrone >= PLAYER_MIN_HPOS && hposDrone < PLAYER_MAX_HPOS)
         {
             rev = ((hposDrone - PLAYER_MIN_HPOS) >> 2) + 3;
             phrd += rev;
@@ -898,25 +908,26 @@ void dvbi_routine_GameRunning(void)
             if (ramp < 40)
             {
                 *phrd = CHAR_ROCK;
-                //rows[dline][rev] = CHAR_ROCK;
             }
             else if (ramp < 50)
             {
                 *phrd = CHAR_REPAIR;
-                //rows[dline][rev] = CHAR_REPAIR;
             }
             else if (ramp < 55)
             {
                 *phrd = CHAR_EMP | 0x80;
-                //rows[dline][rev] = CHAR_EMP | 0x80;
             }
             else
             {
                 *phrd = CHAR_BLANK;
-                //rows[dline][rev] = 0;
             }
-            phrd++;
-            rev++;
+            phrd -= rev;
+        }            
+
+        if (hposDrone >= (PLAYER_MIN_HPOS - 4) && hposDrone < (PLAYER_MAX_HPOS - 8))
+        {
+            rev = ((hposDrone - PLAYER_MIN_HPOS) >> 2) + 4;
+            phrd += rev;
             rfv(ramp);
             if (ramp > 214)
             {
@@ -952,6 +963,11 @@ void dvbi_routine_GameRunning(void)
             BLOW_PLAYER(3);
             if (blowUp0 && blowUp1 && blowUp2 && blowUp3)
             {
+                /* Hide players and blow up drone */
+                SET_ACTIVE_PLAYER_POS(0,0);
+                SET_ACTIVE_PLAYER_POS(1,0);
+                SET_ACTIVE_PLAYER_POS(2,0);
+                SET_ACTIVE_PLAYER_POS(3,0);
                 blowUp = 1;
             }
         }
@@ -997,7 +1013,7 @@ void dvbi_routine_GameRunning(void)
     rmtplayCount++;
     if (rmtplayCount > 5) rmtplayCount = 0;
 
-#if 1
+#if 0
     if (hposp0 == 0) thposp0 = PLAYER_MIN_HPOS;
     else thposp0 = hposp0 + PLAYER_WIDTH;
 
@@ -1017,11 +1033,11 @@ void dvbi_routine_GameRunning(void)
     if (thposp2 == 0) thposp2 = PLAYER_MIN_HPOS;
     if (thposp3 == 0) thposp3 = PLAYER_MIN_HPOS;
 
+#endif
     MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-#endif
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1250,6 +1266,10 @@ void main(void)
 
     //for (;;)
     {
+        //memcpy(&notice[0], ly0, 40);
+        //LyricWait(96);
+        //memset(&notice[0], 0, 40);
+        //LyricWait(96);
         LyricWait(192);
 
         LYRIC(ly1, 26);
@@ -1426,6 +1446,11 @@ lyricBreak:
             }
             score = 0;
 
+            SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(1, PLAYER1_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(2, PLAYER2_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
+#if 0            
             if (hposp0 != 0)
             {
                 hposp0 = PLAYER0_DFL_HPOS; \
@@ -1446,7 +1471,7 @@ lyricBreak:
                 hposp3 = PLAYER3_DFL_HPOS; \
                 hposm3 = PLAYER3_DFL_HPOS + 2; \
             }
-
+#endif
             lastTrigp0 = 1;
             lastTrigp1 = 1;
             lastTrigp2 = 1;
@@ -1548,6 +1573,9 @@ lyricBreak:
         }
         else if (dayInit == 1)
         {
+            /* Disable attract mode */
+            POKE(77, 0);
+
             dayInit = 0;
             vblanks = 0;
             waitForVBLANK();
@@ -1575,6 +1603,11 @@ lyricBreak:
             OS.color3 = 0;
             OS.color4 = 0;
             OS.chbas = 0xE0;
+
+            SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(1, PLAYER1_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(2, PLAYER2_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
 
             ANTIC.nmien = 0xC0;
         }

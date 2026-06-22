@@ -16,7 +16,7 @@ Single and/or Double Paddles in Port 1 and/or Port 2
 
 # Instructions
 FarmSquad is a 2-4 Player cooperative paddle game; it can be played with 1 Player.
-The goal is to harvest and protect your crops from an electrolytic spraying Drone and achieve a high score for your team.
+The goal is to harvest and protect your crops from a remotely operated, electrolytic energy drink spraying Drone and achieve a high score for your team.
 Make sure your paddle pots are clean for the best experience.
 
 ## Intro Song and Music
@@ -31,20 +31,20 @@ Briefly press the paddle button to enable or disable a Player.
 Each Player is uniquely identified by a 1 to 4 dot pattern below the combine tractor.
 
 ## Starting Game
-Press and hold down any active Player paddle button for 3 seconds to start a game.
+Press and hold down any active Player's paddle button for 3 seconds to start a game.
 
 ## Gameplay
 Each Player operates a combine tractor near the bottom of the screen.
 
-The steering indicator at the front of the combine tractor indictes the Player's direction; left, straight, or right. The paddle acts as a "3 zone" steering wheel to change direction. To turn left or right faster press the paddle button rapidly. Turning the paddle to the left or right extremes will not turn the player any faster.
+The steering indicator at the front of the combine tractor indictes the Player's direction; left, straight, or right. The paddle acts as a "3 zone" steering wheel to change direction. To turn left or right faster press the paddle button rapidly. Turning the paddle to the left or right extremes will not turn the Player any faster.
 
-A remotely operated drone kills Crops in its path with an electrolyic spray and sometimes turns up Rocks, Repairs and EMPs buried in the field. Occasionally the drone goes beserk and will kill an entire field of Crops.
+A remotely operated drone kills Crops in its path with an electrolyic energy drink spray and sometimes turns up Rocks, Repairs and EMPs buried in the field. Occasionally the drone goes beserk and will kill an entire field of Crops.
 
-Each player harvests Crops and must dodge Rocks to avoid damage. If a player hits a Rock they turn magenta to indicate damage, a second rock hit will end the game for all players. Collecting a magenta Repair or blue EMP fixes a damaged player.
+Each Player harvests Crops and must dodge Rocks to avoid damage. If a Player hits a Rock they turn magenta to indicate damage, a second Rock hit will end the game for all Players. Collecting a magenta Repair or blue EMP fixes a damaged Player.
 
-If an EMP is collected the Player turns blue. If a Player collects a Repair or hits a Rock they lose their EMP. When ALL players have an EMP they can simultaneously hold down their paddle buttons to destroy the drone. When the drone is destroyed the day ends and the next day begins.
+If an EMP is collected the Player turns blue. If a Player collects a Repair or hits a Rock they lose their EMP. When ALL Players have an EMP they can simultaneously hold down their paddle buttons to destroy the drone. When the drone is destroyed the day ends and the next day begins.
 
-Players must destroy the drone before the end of day otherwise the game ends for all Players. The Drone's shadow moves from left to right during the day indicating how much daylight is left. As dusk decends there is only a little time left for the Players to destroy the Drone.
+Players must destroy the drone before the end of day otherwise the game ends for all Players. The Drone's shadow moves from left to right during the day indicating how much daylight is left. As dusk decends only a little time remains for the Players to destroy the Drone.
 
 As the days progress, gameplay gets more difficult. The days get shorter and the Drone turns up more Rocks and fewer Repairs and EMPs.
 
@@ -59,10 +59,14 @@ On the Attract screen the score for the last play is displayed to the left of th
 ## Strategy and Tactics
 If an EMP is behind a Rock and the Player is not damaged then the Player can take the Rock hit and then be repaired by the EMP.
 
-The blades of the combine are where Crops, Rocks, Repairs, and EMPs can affect the Player. A Player can pass over a Rock if it is behind the blades to navigate difficult terrain.
+The blades of the combine are where Crops, Rocks, Repairs, and EMPs affect the Player. A Player can pass over a Rock if it is behind the blades which can help when navigating difficult terrain.
 
-Player's blades consume 2 cells of items left to right. For example, if a Rock (left) and a Repair (right) are consumed then the Player gets damaged, but is immeditely repaired.
+Player's combine blades process 2 cells of the field left to right. For example, if a Rock (left) and a Repair (right) are processed then the Player gets damaged, but is immeditely repaired.
 
-When players are stacked, lower numbered players will consume Crops, Repairs, and EMPs first and none will be left for higher numbered players. Rocks however remain in the field and will damage all stacked players.
+When Players are stacked, lower numbered Players will consume Crops, Repairs, and EMPs first and none will be left for higher numbered Players. Rocks however remain in the field and will damage all stacked Players.
 
-Since scoring is solely based on harvesting crops and gameplay is more difficult as the days progress it can be advantageous to "hold fire" of EMPs until dusk arrives. But it comes at the risk that a player loses their EMP at the last minute and the Drone is not destroyed before the day ends. Also Players must make sure they do not accidently fire their EMP when using using their paddle buttons to turn quickly.
+Since scoring is solely based on harvesting crops and gameplay is more difficult as the days progress it can be advantageous to "hold fire" of EMPs until dusk arrives. But it comes at the risk that a Player loses their EMP at the last minute and the Drone is not destroyed before the day ends. Also Players must coordinate to make sure they do not accidently fire their EMP when using using their paddle buttons to turn quickly.
+
+## Competitive Team Play
+
+Split Players into two teams and alternate play between teams. The team holding the HI score after X rounds wins.
