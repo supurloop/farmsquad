@@ -32,10 +32,6 @@
 /* --------------------------------------------------------------------------------------------- */
 /* RMT Music and Engine                                                                          */
 /* --------------------------------------------------------------------------------------------- */
-//#pragma data-name (push, "RMTSONGNotPlaying")
-//unsigned char song_rmt_not_started[] = { };
-//#pragma data-name (pop)
-
 #pragma data-name (push, "RMTSONGIDLE")
 unsigned char song_rmt_idle[] = {
   0xff, 0xff, 0x00, 0x9e, 0x52, 0x9f, 0x52, 0x4d, 0x54, 0x34, 0x20, 0x10,

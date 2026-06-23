@@ -4,7 +4,7 @@
 /* Scrolling display lists.                                                                      */
 /*                                                                                               */
 /* BSD-3-Clause License                                                                          */
-/* Copyright 2024 Supurloop Software LLC                                                         */
+/* Copyright 2026 Supurloop Software LLC                                                         */
 /*                                                                                               */
 /* Redistribution and use in source and binary forms, with or without modification, are          */
 /* permitted provided that the following conditions are met:                                     */
@@ -30,6 +30,12 @@
 /* --------------------------------------------------------------------------------------------- */
 #include <atari.h>
 #include "main.h"
+
+const void dlistflash =
+{
+    DL_JVB,
+    0x0600,
+};
 
 const void dlistlyrics =
 {

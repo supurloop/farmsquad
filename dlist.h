@@ -37,6 +37,7 @@ extern "C"
 #endif
 
 #define DL_SIZE (37)
+extern const void dlistflash;
 extern const void dlistlyrics;
 extern const void dlist;
 

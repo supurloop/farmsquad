@@ -38,7 +38,7 @@ Each Player operates a combine tractor near the bottom of the screen.
 
 The steering indicator at the front of the combine tractor indictes the Player's direction; left, straight, or right. The paddle acts as a "3 zone" steering wheel to change direction. To turn left or right faster press the paddle button rapidly. Turning the paddle to the left or right extremes will not turn the Player any faster.
 
-A remotely operated drone kills Crops in its path with an electrolyic energy drink spray and sometimes turns up Rocks, Repairs and EMPs buried in the field. Occasionally the drone goes beserk and will kill an entire field of Crops.
+A remotely operated Drone kills Crops in its path with an electrolyic energy drink spray. It sometimes turns up Rocks, Repairs and EMPs buried in the field. Occasionally the Drone rages and will kill an entire field of Crops.
 
 Each Player harvests Crops and must dodge Rocks to avoid damage. If a Player hits a Rock they turn magenta to indicate damage, a second Rock hit will end the game for all Players. Collecting a magenta Repair or blue EMP fixes a damaged Player.
 
@@ -46,7 +46,7 @@ If an EMP is collected the Player turns blue. If a Player collects a Repair or h
 
 Players must destroy the drone before the end of day otherwise the game ends for all Players. The Drone's shadow moves from left to right during the day indicating how much daylight is left. As dusk decends only a little time remains for the Players to destroy the Drone.
 
-As the days progress, gameplay gets more difficult. The days get shorter and the Drone turns up more Rocks and fewer Repairs and EMPs.
+As the days progress, gameplay gets more difficult. The Drone turns up more Rocks and fewer Repairs and EMPs.
 
 ## Scoring
 
@@ -66,6 +66,8 @@ Player's combine blades process 2 cells of the field left to right. For example,
 When Players are stacked, lower numbered Players will consume Crops, Repairs, and EMPs first and none will be left for higher numbered Players. Rocks however remain in the field and will damage all stacked Players.
 
 Since scoring is solely based on harvesting crops and gameplay is more difficult as the days progress it can be advantageous to "hold fire" of EMPs until dusk arrives. But it comes at the risk that a Player loses their EMP at the last minute and the Drone is not destroyed before the day ends. Also Players must coordinate to make sure they do not accidently fire their EMP when using using their paddle buttons to turn quickly.
+
+In addition to using the paddle button to turn faster, Players can achieve faster turns by quicky oscillating the paddle between straight and a left or right turn.
 
 ## Competitive Team Play
 

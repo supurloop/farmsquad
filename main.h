@@ -38,9 +38,8 @@ extern "C"
 
 #include <stdint.h>
 
-#define TERRAIN_PAGES (1u)
-#define NUM_COLUMNS 40
-#define NUM_ROWS 30
+#define NUM_COLUMNS (40u)
+#define NUM_ROWS (30u)
 #define ROW_ADDR_OFF (3u)
 #define NUM_PLAY_COLUMNS (NUM_COLUMNS - (ROW_ADDR_OFF << 1))
 
@@ -71,7 +70,7 @@ typedef enum
     CHAR_3_4TH_BOT_LEFT = 17,
     CHAR_3_4TH_TOP_RIGHT = 18,
     CHAR_3_4TH_BOT_RIGHT = 19,
-#if 1
+
     /* Double Chars x & x + 1*/
     /* 0-9 */
     CHAR_0 = 20,
@@ -113,7 +112,6 @@ typedef enum
     CHAR_Y = 88,
     CHAR_Z = 90,
     CHAR_Z_END = 91,
-#endif    
     CHAR_DASH,
     CHAR_DASH_END,
     CHAR_MAX,
@@ -121,15 +119,6 @@ typedef enum
 
 extern uint8_t rows[NUM_ROWS][NUM_COLUMNS];
 extern uint8_t notice[NUM_COLUMNS];
-
-/* Terrain */
-extern uint8_t column;
-extern uint8_t r;
-extern uint8_t *pterrain2;
-extern uint8_t tline2;
-extern uint8_t tline;
-extern uint8_t now;
-extern uint8_t terrain[TERRAIN_PAGES * NUM_ROWS *(NUM_COLUMNS - (ROW_ADDR_OFF << 1))];
 
 #ifdef __cplusplus
 }

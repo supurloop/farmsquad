@@ -4,7 +4,7 @@
 /* Atari 8-bit XL/XE arcade game, built using the cc65-2.19 toolchain.                           */
 /*                                                                                               */
 /* BSD-3-Clause License                                                                          */
-/* Copyright 2024 Supurloop Software LLC                                                         */
+/* Copyright 2026 Supurloop Software LLC                                                         */
 /*                                                                                               */
 /* Redistribution and use in source and binary forms, with or without modification, are          */
 /* permitted provided that the following conditions are met:                                     */
@@ -31,7 +31,7 @@
 
 /* --------------------------------------------------------------------------------------------- */
 /* Build                                                                                         */
-/* cl65 --target atari -C .\atari-xex.cfg -O -o Vector-Doubles.xex main.c                        */
+/* cl65.exe --target atari -C .\atari-xex.cfg -Os --listing FarmSquad.lst --mapfile FarmSquad.map -o FarmSquad.xex main.c dlist.c rand.c rmt.c */
 /* To make different tune use RMT to export stripped rmt and then run, incorporate into main.c   */
 /* ..\..\xasm-3.1.0-windows\xxd -i .\newmusicstripped.rmt > song.h                               */
 /* Altirra - XE ATOS/800 NTSC/64K/BASIC */
@@ -51,7 +51,6 @@
 #include "dlist.h"
 #include "main.h"
 #include "rand.h"
-//#include "terrain.h"
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros                                                                                        */
@@ -92,22 +91,7 @@
 #define PF1_COLOR 0x08 /* Gray Rock */
 #define PF2_COLOR 0x66 /* Purple Repairs */
 #define PF3_COLOR 0x86 /* Blue EMPs */
-
-/* --------------------------------------------------------------------------------------------- */
-/* Waits for vblank.                                                                             */
-/* --------------------------------------------------------------------------------------------- */
-#define waitForVBLANK() { \
-    currClockFrame = OS.rtclok[2]; \
-    while (OS.rtclok[2] == currClockFrame); \
-}
-
-/* --------------------------------------------------------------------------------------------- */
-/* Terrain Cache                                                                                 */
-/* --------------------------------------------------------------------------------------------- */
-uint8_t wsyncCount;
-uint8_t blowUp;
-uint8_t blown;
-uint8_t gameEndType; // 0 not ended, 1 = hit rock, 2 end of day
+#define MAIN_BG_COLOR 0x2f /* Light yellow */
 
 /* --------------------------------------------------------------------------------------------- */
 /* Macros to convert single byte chars into double byte chars                                    */
@@ -133,17 +117,17 @@ uint8_t customCharSet[CHAR_MAX][8] =
     { 0x2a, 0x6a, 0x6a, 0x6a, 0x2a, 0x6a, 0x11, 0x11 }, /* 6 - Wall 2 */
     { 0xa9, 0xa8, 0xa9, 0xa8, 0xa9, 0xa8, 0x44, 0x11 }, /* 7 - Wall 3 */
     { 0x8a, 0x9a, 0x8a, 0x9a, 0x9a, 0x9a, 0x11, 0x44 }, /* 8 - Wall 4 */
-    { 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55, 0x55 }, /* 9 - Full Block */
-    { 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50 }, /* 10 - Left Half */
-    { 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05, 0x05 }, /* 11 - Right Half */
-    { 0x55, 0x55, 0x54, 0x54, 0x50, 0x50, 0x40, 0x40 }, /* 12 - Corner Top Left */
-    { 0x40, 0x40, 0x50, 0x50, 0x54, 0x54, 0x55, 0x55 }, /* 13 - Corner Bottom Left */
-    { 0x55, 0x55, 0x15, 0x15, 0x05, 0x05, 0x01, 0x01 }, /* 14 - Corner Top Right */
-    { 0x01, 0x01, 0x05, 0x05, 0x15, 0x15, 0x55, 0x55 }, /* 15 - Corner Bottom Right */
-    { 0x05, 0x05, 0x05, 0x05, 0x55, 0x55, 0x55, 0x55 }, /* 16 - 3/4 Top Left */
-    { 0x55, 0x55, 0x55, 0x55, 0x05, 0x05, 0x05, 0x05 }, /* 17 - 3/4 Bottom Left */
-    { 0x50, 0x50, 0x50, 0x50, 0x55, 0x55, 0x55, 0x55 }, /* 18 - 3/4 Top Right */
-    { 0x55, 0x55, 0x55, 0x55, 0x50, 0x50, 0x50, 0x50 }, /* 19 - 3/4 Bottom Right */
+    { 0x44, 0x11, 0x44, 0x11, 0x44, 0x11, 0x44, 0x11 }, /* 9 - Full Block */
+    { 0x40, 0x10, 0x40, 0x10, 0x40, 0x10, 0x40, 0x10 }, /* 10 - Left Half */
+    { 0x04, 0x01, 0x04, 0x01, 0x04, 0x01, 0x04, 0x01 }, /* 11 - Right Half */
+    { 0x44, 0x11, 0x44, 0x14, 0x40, 0x10, 0x40, 0x40 }, /* 12 - Corner Top Left */
+    { 0x40, 0x40, 0x40, 0x10, 0x44, 0x14, 0x44, 0x11 }, /* 13 - Corner Bottom Left */
+    { 0x44, 0x11, 0x14, 0x11, 0x04, 0x01, 0x01, 0x01 }, /* 14 - Corner Top Right */
+    { 0x01, 0x01, 0x04, 0x01, 0x14, 0x11, 0x44, 0x11 }, /* 15 - Corner Bottom Right */
+    { 0x04, 0x01, 0x04, 0x01, 0x44, 0x11, 0x44, 0x11 }, /* 16 - 3/4 Top Left */
+    { 0x44, 0x11, 0x44, 0x11, 0x04, 0x01, 0x04, 0x01 }, /* 17 - 3/4 Bottom Left */
+    { 0x40, 0x10, 0x40, 0x10, 0x44, 0x11, 0x44, 0x11 }, /* 18 - 3/4 Top Right */
+    { 0x44, 0x11, 0x44, 0x11, 0x40, 0x10, 0x40, 0x10 }, /* 19 - 3/4 Bottom Right */
 
 #if 1 
     CHAR_DOUBLE(0, 60,  102, 110, 118, 102, 60,  0)     /* 20/21 - 0 */
@@ -193,7 +177,6 @@ uint8_t customCharSet[CHAR_MAX][8] =
 #define AZC(c) (((c - 'A') << 1) + CHAR_A), (((c - 'A') << 1) + CHAR_A + 1)
 #define Z9C(c) (((c - '0') << 1) + CHAR_0), (((c - '0') << 1) + CHAR_0 + 1)
 
-//char byJimHigginsStr[] = { AZC('B'), AZC('Y'), CHAR_BLANK, AZC('J'), AZC('I'), AZC('M'), CHAR_BLANK, AZC('H'), AZC('I'), AZC('G'), AZC('G'), AZC('I'), AZC('N'), AZC('S')};
 char cropRockStr[] = { CHAR_CROP, CHAR_BLANK, AZC('C'), AZC('R'), AZC('O'), AZC('P'), CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_ROCK, CHAR_BLANK, AZC('R'), AZC('O'), AZC('C'), AZC('K') };
 char repairEmpStr[] = { CHAR_REPAIR, CHAR_BLANK, AZC('R'), AZC('E'), AZC('P'), AZC('A'), AZC('I'), AZC('R'), CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_BLANK, CHAR_EMP | 0x80, CHAR_BLANK, AZC('E'), AZC('M'), AZC('P') };
 char paddleStr[] = { AZC('P'), AZC('A'), AZC('D'), AZC('D'), AZC('L'), AZC('E'), CHAR_BLANK, CHAR_BLANK, Z9C('1'), CHAR_DASH, Z9C('4'), CHAR_BLANK, AZC('P'), AZC('L'), AZC('A'), AZC('Y'), AZC('E'), AZC('R'), AZC('S') };
@@ -238,60 +221,61 @@ uint8_t rows[NUM_ROWS][NUM_COLUMNS];
 uint8_t notice[NUM_COLUMNS];
 #pragma bss-name (pop)
 
+#define DEFINE_PLAYER(pn) \
+    uint8_t pactive##pn; \
+    uint8_t hposp##pn; \
+    uint8_t hposm##pn; \
+    uint8_t colpm##pn; \
+    uint8_t delayp##pn; \
+    uint8_t lastTrigp##pn; \
+    uint16_t trigCountp##pn; \
+    uint8_t lastDirp##pn; \
+    uint8_t newDirp##pn; \
+    uint8_t blowUp##pn;
+
 /* Frequently used variables - Put in Zero Page */
 #pragma data-name (push, "ZEROPAGE")
-uint8_t gstate;
-unsigned char ifs;
-unsigned char fs;
-unsigned char line;
-unsigned char dline;
-unsigned char cline;
+uint8_t wsyncCount;
+uint8_t blowUp;
+uint8_t blown;
+uint8_t fs;
+uint8_t line;
+uint8_t dline;
+uint8_t cline;
 uint8_t rmtplayCount;
-unsigned char animation;
+uint8_t animation;
 uint8_t paddle;
 uint8_t trigger;
 uint16_t score;
-uint16_t hiscore;
-uint8_t thposp0;
-uint8_t thposp1;
-uint8_t thposp2;
-uint8_t thposp3;
 uint8_t ufoVolume;
+uint8_t droneVolume;
+uint8_t lastDir;
+uint8_t dvs;
+DEFINE_PLAYER(0)
+DEFINE_PLAYER(1)
+DEFINE_PLAYER(2)
+DEFINE_PLAYER(3)
 #pragma data-name (pop)
 
-//#define MAIN_COLOR_START 64  // deep magenta
-#define MAIN_COLOR_START 47
-#define MAIN_COLOR_END 47
+uint8_t *phrc; /* Player Row Pointer */
+uint8_t *phrct; /* Temp Player Row Pointer */
+uint8_t *phrd; /* Drone Row Pointer */
+void *lastRoutine;
 
-unsigned char mainbgcolor = MAIN_COLOR_START;
+uint8_t gameEndType; // 0 not ended, 1 = hit rock, 2 end of day
+unsigned char mainbgcolor = MAIN_BG_COLOR;
 unsigned char currClockFrame = 0;
 uint8_t *rp;
 char *p = (char *)CS_ADDR;
-char *dl;// = (char *)DL_ADDR;
+char *dl;
 unsigned char *dlp = &dlist;
 
+uint16_t hiscore;
 uint8_t hposDrone;
 uint8_t hposShadow;
 uint8_t hposShadowDelta;
 uint8_t hposShadowCounts;
 uint8_t day = 1;
-
-#define DEFINE_PLAYER(pn) \
-uint8_t pactive##pn; \
-uint8_t hposp##pn; \
-uint8_t hposm##pn; \
-uint8_t colpm##pn; \
-uint8_t delayp##pn; \
-uint8_t lastTrigp##pn; \
-uint16_t trigCountp##pn; \
-uint8_t lastDirp##pn; \
-uint8_t newDirp##pn; \
-uint8_t blowUp##pn;
-
-DEFINE_PLAYER(0)
-DEFINE_PLAYER(1)
-DEFINE_PLAYER(2)
-DEFINE_PLAYER(3)
 
 uint8_t rev;
 uint8_t volume;
@@ -300,11 +284,23 @@ uint8_t ramp;
 
 uint8_t droneTarget;
 uint8_t targeted;
-uint16_t droneTargetCount;
+uint8_t droneTargetCount;
 uint8_t vblanks;
+uint8_t vblankEnd;
 uint8_t idleInit;
 uint8_t runInit;
 uint8_t dayInit;
+uint8_t flashInit;
+uint8_t isEndOfDay;
+uint8_t minRockVal;
+uint8_t minRepairVal;
+uint8_t minEMPVal;
+uint8_t maxRockVal;
+uint8_t maxRepairVal;
+uint8_t maxEMPVal;
+uint8_t rageCount;
+uint8_t rageErase;
+uint8_t rageColor;
 
 /* Terrain making variables */
 uint8_t column;
@@ -314,6 +310,8 @@ uint8_t tline2;
 
 #define DO_LYRICS (1u)
 #if DO_LYRICS == 1
+const char *gameOverEoD = "\x00\x00\x00\x00\x00\x00\x00\x00\x34ime\x00\x29s\x00\x35p\x00\x0d\x00\x24rone\x00\x37on\x0e\x00\x00\x00\x00\x00\x00\x00\x00\x00";
+const char *gameOverRock = "\x00\x00\x00\x00\x00\x34ractor\x00\x24" "estroyed\x00\x0d\x00" "\x24rone\x00\x37on\x0e\x00\x00\x00\x00";
 const char *ly0 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00" "by\x00\x33upurloop\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly1 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x26" "arm" "\x33" "quad\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
 const char *ly2 = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x22" "est\x00of\x00the\x00" "best\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00";
@@ -339,21 +337,6 @@ const char *ly16 = "\x00\x00\x00\x00\x21\x00" "determined\x00search\x00\x0d\x00"
 const char *ly17 = "\x34ogether\x00we\x00" "fire\x00\x0d\x00" "and\x00stop\x00their\x00spree\x0e";
 const char *ly18 = "\x00\x00\x00\x00\x3a" "ap\x00the\x00" "drone\x00\x0d\x00" "ere\x00" "day\x00is\x00out\x0e\x00\x00\x00\x00";
 const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "another\x00" "bout\x01\x00\x00\x00";
-#endif
-
-#if 0
-#define BCD_ADD(va, plus, line) \
-        __asm__("ldx #$00"); \
-        __asm__("lda %v,x", va); \
-        __asm__("adc %v", plus); \
-        __asm__("sta %v,x", va); \
-        __asm__("bcc %g", va##line); \
-        __asm__("ldx #$01"); \
-        __asm__("lda %v,x", va); \
-        __asm__("adc #$00"); \
-        __asm__("sta %v,x", va); \
-va##line: \
-        __asm__("cld");
 #endif
 
 #define UFO_SPRITE_SET_ROW(p0d, p1d, p2d, p3d, r) \
@@ -552,6 +535,7 @@ va##line: \
   COMBINE_SPRITES(129, 90, 129,   0, 66, 0, 66, 0, 66, 0, 66, 0)
 
 void dli_routine7(void);
+void dli_routineNull(void);
 
 #define DLI_DELAY() \
     ANTIC.vscrol = fs; \
@@ -564,7 +548,7 @@ void dli_routine7(void);
     ANTIC.wsync = 0; \
     GTIA_WRITE.colpm0 = 0x00; \
     GTIA_WRITE.colpm1 = 0x02; \
-    GTIA_WRITE.colpm2 = 0x44; \
+    GTIA_WRITE.colpm2 = rageColor; \
     GTIA_WRITE.colpm3 = 0x84;
 
 
@@ -607,6 +591,10 @@ void dli_routine7(void);
     asm("pla"); \
     asm("rti");
 
+void dli_routineNull(void) {
+    DLI_ENTER();
+    DLI_EXIT();
+}
 
 #define DLI_ROUTINE(vs, vsn, da, ca, wsyncs) \
 void dli_routine##vs(void) { \
@@ -639,6 +627,12 @@ DLI_ROUTINE(5, 4, 2, 1, 22)
 DLI_ROUTINE(6, 5, 1, 1, 23)
 DLI_ROUTINE(7, 6, 1, 1, 23)
 
+#define MUSIC_PLAY_COUNT (5) /* NTSC */
+#define PLAY_MUSIC() \
+    if (rmtplayCount < MUSIC_PLAY_COUNT) RMTPlay; \
+    rmtplayCount++; \
+    if (rmtplayCount > MUSIC_PLAY_COUNT) rmtplayCount = 0;
+
 #define MOVE_PLAYER(pn, lb, ub) \
     /* Read paddle */ \
     if ((pactive##pn != 0) && (hposp##pn != 0)) { \
@@ -666,22 +660,19 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
       else hposm##pn = hposp##pn + 2; \
     } }
 
-uint8_t *phrc;
-uint8_t *phrct;
-uint8_t *phrd; /* Drone Row Pointer */
+#define HIT_PLAYER_SUB(pn) \
+    if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score += trigCountp##pn; } \
+    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { dayInit = 2; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; trigCountp##pn = 0; } } \
+    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; trigCountp##pn = 2; } \
+    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; trigCountp##pn = 1; rageCount++; }
 
 #define HIT_PLAYER(pn) if (hposp##pn != 0) { \
     paddle = (hposp##pn - (PLAYER_MIN_HPOS - PLAYER_WIDTH)) >> 2; \
     phrct = phrc + paddle; \
-    if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score++; } \
-    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
-    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; } \
-    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; } \
+    HIT_PLAYER_SUB(pn); \
     phrct++; \
-    if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score++; } \
-    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { idleInit = 1; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
-    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; } \
-    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; } }
+    HIT_PLAYER_SUB(pn); \
+}
 
 #define BLOW_PLAYER(pn) { \
     blowUp##pn = !pactive##pn; \
@@ -720,8 +711,10 @@ uint8_t *phrd; /* Drone Row Pointer */
 
 void dvbi_routine_GameIdleInit(void);
 void dvbi_routine_Notice(void);
+void dvbi_routine_Flash(void);
 
 #define SET_ACTIVE_PLAYER_POS(pn,pos) if (pactive##pn != 0) { hposm##pn = pos; hposp##pn = pos; }
+#define SET_ACTIVE_PLAYER_POS2(pn,pos) if (pactive##pn != 0) { hposm##pn = pos + 2; hposp##pn = pos; }
 
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Started                                                              */
@@ -734,30 +727,62 @@ void dvbi_routine_GameRunning(void)
     {
         if (targeted == 0)
         {
-        if ((droneTarget > hposDrone))
-        {
-            hposDrone++;
-            hposShadow = hposShadowDelta + hposDrone - 16;
-        }
-        else if ((droneTarget < hposDrone))
-        {
-            hposDrone--;
-            hposShadow = hposShadowDelta + hposDrone - 16;
-        }
-        else 
-        {
-            targeted = (rf() & 0x03) + 1;
-        }
+            if ((droneTarget > hposDrone))
+            {
+                hposDrone++;
+                hposShadow = hposShadowDelta + hposDrone - 16;
+                if (lastDir != 1)
+                {
+                    if ((dvs != 0) && (droneTarget - hposDrone) > 8) { dvs = 0; droneVolume = 45; volume = 150; tone = 1; }
+                }
+            }
+            else if ((droneTarget < hposDrone))
+            {
+                hposDrone--;
+                hposShadow = hposShadowDelta + hposDrone - 16;
+                if (lastDir != 2)
+                {
+                    if ((dvs != 0) && (hposDrone - droneTarget) > 8) { dvs = 0; droneVolume = 45; volume = 150; tone = 0; }
+                }
+            }
+            else 
+            {
+                targeted = (rf() & 0x03) + 1;
+                dvs = 1;
+                lastDir = 0;
+            }
         }    
         else if (targeted == 1)
         {
             hposDrone++;
-            hposShadow = hposShadowDelta + hposDrone - 16;
+            hposShadow = hposShadowDelta + hposDrone - 16;    
+            lastDir = 1; 
+#if 0                   
+            if (droneVolume == 0)
+            {
+                if ((dvs != 0)) { dvs = 0; droneVolume = 45; volume = 150; tone = 5; }
+            }
+            else
+            {
+                dvs = 0;
+            }
+#endif                
         }
         else if (targeted == 2)
         {
             hposDrone--;
             hposShadow = hposShadowDelta + hposDrone - 16;
+            lastDir = 2;
+#if 0            
+            if (droneVolume == 0)
+            {
+                if ((dvs != 0)) { dvs = 0; droneVolume = 45; volume = 150; tone = 3; }
+            }
+            else
+            {
+                dvs = 0;
+            }
+#endif                
         }
     }
 
@@ -839,6 +864,8 @@ void dvbi_routine_GameRunning(void)
                 ufoVolume = 15;
                 //hposDrone = 120; 
                 blowUp++;
+                mainbgcolor = 0x0d;
+                OS.color4 = mainbgcolor;
             }
             else if (blowUp == 2) {
                 GTIA_WRITE.sizep0 = 1;
@@ -848,6 +875,8 @@ void dvbi_routine_GameRunning(void)
                 //hposDrone = 120 - 4;
                 hposDrone -= 4;
                 blowUp++;
+                mainbgcolor = 0x0f;
+                OS.color4 = mainbgcolor;
             }
             else if (blowUp == 3) {
                 GTIA_WRITE.sizep0 = 3;
@@ -857,6 +886,8 @@ void dvbi_routine_GameRunning(void)
                 //hposDrone = 120 - 12;
                 hposDrone -= 12;
                 blowUp++;
+                mainbgcolor = 0x0d;
+                OS.color4 = mainbgcolor;
             }
             else {
                 /* Hide the drone */
@@ -868,7 +899,8 @@ void dvbi_routine_GameRunning(void)
                 hposShadow = 0;
                 blown = 1;
                 blowUp++;
-                //OS.vvblkd = &dvbi_routine_Notice;
+                OS.color4 = mainbgcolor;
+                mainbgcolor = MAIN_BG_COLOR;
             }
             if (blowUp > 16)
             {
@@ -887,13 +919,35 @@ void dvbi_routine_GameRunning(void)
                 if (hposShadowDelta >= 48)
                 {
                     /* Shadow reached end of day!!  */
-                    idleInit = 1;
+                    isEndOfDay = 1;
+                    dayInit = 2;
                 }
                 else if (hposShadowDelta > 40)
                 {
-                    mainbgcolor = MAIN_COLOR_START - (hposShadowDelta - 40);
+                    mainbgcolor = MAIN_BG_COLOR - (hposShadowDelta - 40);
                     OS.color4 = mainbgcolor;
                 }
+            }
+
+            /* Trigger rage animation */
+            if (rageCount > 105)
+            {                
+                rageColor = 0x40;
+                rageCount = 0;
+                rageErase = 1;
+                flashInit = 1;
+            }
+            else if (rageCount > 90)
+            {
+                rageColor = 0x44;
+            }
+            else if (rageCount > 60)
+            {
+                rageColor = 0x2C;
+            }
+            else
+            {
+                rageColor = 0xc6;
             }
 #endif                
         }
@@ -906,15 +960,16 @@ void dvbi_routine_GameRunning(void)
             rev = ((hposDrone - PLAYER_MIN_HPOS) >> 2) + 3;
             phrd += rev;
             rfv(ramp);
-            if (ramp < 40)
+
+            if (ramp < minRockVal)
             {
                 *phrd = CHAR_ROCK;
             }
-            else if (ramp < 50)
+            else if (ramp < minRepairVal)
             {
                 *phrd = CHAR_REPAIR;
             }
-            else if (ramp < 55)
+            else if (ramp < minEMPVal)
             {
                 *phrd = CHAR_EMP | 0x80;
             }
@@ -930,25 +985,21 @@ void dvbi_routine_GameRunning(void)
             rev = ((hposDrone - PLAYER_MIN_HPOS) >> 2) + 4;
             phrd += rev;
             rfv(ramp);
-            if (ramp > 214)
+            if (ramp > maxRockVal)
             {
                 *phrd = CHAR_ROCK;
-                //rows[dline][rev] = CHAR_ROCK;
             }
-            else if (ramp > 204)
+            else if (ramp > maxRepairVal)
             {
                 *phrd = CHAR_REPAIR;
-                //rows[dline][rev] = CHAR_REPAIR;
             }
-            else if (ramp > 199)
+            else if (ramp > maxEMPVal)
             {
                 *phrd = CHAR_EMP | 0x80;
-                //rows[dline][rev] = CHAR_EMP | 0x80;
             }
             else
             {
                 *phrd = CHAR_BLANK;
-                //rows[dline][rev] = 0;
             }
             phrd -= rev;
         }
@@ -970,6 +1021,7 @@ void dvbi_routine_GameRunning(void)
                 SET_ACTIVE_PLAYER_POS(2,0);
                 SET_ACTIVE_PLAYER_POS(3,0);
                 blowUp = 1;
+                //flashInit = 1;
             }
         }
     }
@@ -977,9 +1029,9 @@ void dvbi_routine_GameRunning(void)
     fs--;
     fs &= 0x07;
 
+    PLAY_MUSIC();
     if (rmtplayCount < 5)
     {
-        RMTPlay;
         if (ufoVolume != 0)
         {
             /* Blow up sound effect */
@@ -987,38 +1039,46 @@ void dvbi_routine_GameRunning(void)
             POKEY_WRITE.audc4 = ufoVolume;
             ufoVolume--;
         }
-#if 0
-        else if (rev)
+#if 1
+        else if (blown == 0)
         {
-          POKEY_WRITE.audf4 = tone;
-          POKEY_WRITE.audc4 = 0x80 | (volume >> 4);
-          if (ramp)
-          {
-            if (volume < 127) volume += 2;
-          }
-          else if (volume > 16) volume-=3;
-        }
-        else
-        {
-          POKEY_WRITE.audf4 = tone;
-          POKEY_WRITE.audc4 = 0x80 | (volume >> 4);
-          if (ramp)
-          {
-            if (volume < 127) volume += 2;
-          }
-          else if (volume > 16) volume -= 3;
+            if (hposDrone >= (PLAYER_MIN_HPOS - 24) && hposDrone < (PLAYER_MAX_HPOS + 16))
+            {
+                /* Drone moving sounds */
+                if (droneVolume != 0)
+                {
+                    /* Accelerating */
+                    POKEY_WRITE.audf4 = tone;
+                    POKEY_WRITE.audc4 = 0x80 | (volume >> 4);
+                    if (volume > 16) volume-=3;
+                    droneVolume--;
+                }
+                else
+                {
+                    /* Steady hovering */
+                    POKEY_WRITE.audf4 = 0;
+                    POKEY_WRITE.audc4 = 0x82;
+                }
+            }
+            else
+            {
+                /* Off screen */
+                POKEY_WRITE.audf4 = 0;
+                POKEY_WRITE.audc4 = 0x80;
+                droneVolume = 0;
+            }
         }
 #endif
-
     }
-    rmtplayCount++;
-    if (rmtplayCount > 5) rmtplayCount = 0;
 
     /* Player positions are updated every vertical blank */
     MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+
+    /* Update drone targeting counter */
+    droneTargetCount++;
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1085,22 +1145,8 @@ void dvbi_routine_GameIdle(void)
             {
                 /* Reset the day */
                 hposShadow = hposDrone - 16;
-                mainbgcolor = MAIN_COLOR_START;
+                mainbgcolor = MAIN_BG_COLOR;
                 OS.color4 = mainbgcolor;
-            }
-            else //if (hposShadow & 0x01)
-            {
-#if 0 
-// Daytime background color transitions               
-                if (hposShadow >= hposDrone)
-                {
-                    OS.color4 = mainbgcolor--;
-                }
-                else
-                {
-                    OS.color4 = mainbgcolor++;
-                }
-#endif
             }
         }
     }
@@ -1126,14 +1172,7 @@ void dvbi_routine_GameIdle(void)
     TOGGLE_PLAYER(2);
     TOGGLE_PLAYER(3);
     
-    if (rmtplayCount < 5)
-    {
-#if RMT_RUN == 1  
-    RMTPlay;
-#endif      
-    }
-    rmtplayCount++;
-    if (rmtplayCount > 5) rmtplayCount = 0;
+    PLAY_MUSIC();
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1154,14 +1193,7 @@ void dvbi_routine_GameIdleInit(void)
 void dvbi_routine_Notice(void)
 {
     /* Switch to Idle State */
-    if (rmtplayCount < 5)
-    {
-#if RMT_RUN == 1  
-    RMTPlay;
-#endif      
-    }
-    rmtplayCount++;
-    if (rmtplayCount > 5) rmtplayCount = 0;
+    PLAY_MUSIC();
 
     vblanks++;
     if (vblanks == 0)
@@ -1175,23 +1207,63 @@ void dvbi_routine_Notice(void)
     __asm__("jmp $E462");
 }
 
+/* --------------------------------------------------------------------------------------------- */
+/* Delayed VBI - MODE: EMP Flash                                                               */
+/* --------------------------------------------------------------------------------------------- */
+void dvbi_routine_Flash(void)
+{
+    /* Switch to Idle State */
+    PLAY_MUSIC();
+
+    /* Continue game mode */
+    vblanks++;
+    if (vblanks > 8)
+    {
+        rageErase = 0;
+        vblanks = 0;
+        flashInit = 2; 
+    }
+    if (rageErase)
+    {
+        POKEY_WRITE.audf4 = 255;
+        POKEY_WRITE.audc4 = 0x2f;
+    }
+    __asm__("jmp $E462");
+}
+
+/* --------------------------------------------------------------------------------------------- */
+/* Waits for vblank.                                                                             */
+/* --------------------------------------------------------------------------------------------- */
+void waitForVBLANK() {
+    currClockFrame = OS.rtclok[2];
+    while (OS.rtclok[2] == currClockFrame);
+}
+
+void dvbi_routine_Gameover(void)
+{
+    vblanks--;
+    if (vblanks == 0)
+    {
+        idleInit = 1; 
+        POKEY_WRITE.audf4 = 0;
+        POKEY_WRITE.audc4 = 0;
+    }
+    else
+    {
+        POKEY_WRITE.audf4 = 200;
+        POKEY_WRITE.audc4 = 0x20 | (vblanks >> 4);
+    }
+
+    __asm__("jmp $E462");
+}
+
 #if DO_LYRICS == 1
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Idle Initialization                                                  */
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_ShowLyrics(void)
 {
-    /* Switch to Idle State */
-    if (rmtplayCount < 5)
-    {
-#if RMT_RUN == 1  
-    RMTPlay;
-#endif      
-    }
-    rmtplayCount++;
-    if (rmtplayCount > 5) rmtplayCount = 0;
-
-    //OS.color4 = mainbgcolor;
+    PLAY_MUSIC();
 
     __asm__("jmp $E462");
 }
@@ -1334,20 +1406,7 @@ lyricBreak:
     lastTrigp1 = 1;
     lastTrigp2 = 1;
     lastTrigp3 = 1;
-#if 0
-    hposp0 = 0;
-    hposm0 = 0;
-    colpm0 = 0;
-    hposp1 = 0;
-    hposm1 = 0;
-    colpm1 = 0;
-    hposp2 = 0;
-    hposm2 = 0;
-    colpm2 = 0;
-    hposp3 = 0;
-    hposm3 = 0;
-    colpm3 = 0;
-#endif
+
     /* Initialize playfield colors */
     OS.color0 = PF0_COLOR;
     OS.color1 = PF1_COLOR;
@@ -1368,7 +1427,14 @@ lyricBreak:
         {
 #if 1
             ANTIC.nmien = 0x00;
-            
+            OS.chbas = CS_ADDR_HI;
+            OS.color0 = PF0_COLOR;
+            OS.color1 = PF1_COLOR;
+            OS.color2 = PF2_COLOR;
+            OS.color3 = PF3_COLOR;
+            mainbgcolor = MAIN_BG_COLOR;
+            OS.color4 = mainbgcolor;
+
 #if RMT_RUN == 1      
             RMTInitIdle;
 #endif
@@ -1426,32 +1492,11 @@ lyricBreak:
             }
             score = 0;
 
-            SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
-            SET_ACTIVE_PLAYER_POS(1, PLAYER1_DFL_HPOS);
-            SET_ACTIVE_PLAYER_POS(2, PLAYER2_DFL_HPOS);
-            SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
-#if 0            
-            if (hposp0 != 0)
-            {
-                hposp0 = PLAYER0_DFL_HPOS; \
-                hposm0 = PLAYER0_DFL_HPOS + 2; \
-            }
-            if (hposp1 != 0)
-            {
-                hposp1 = PLAYER1_DFL_HPOS; \
-                hposm1 = PLAYER1_DFL_HPOS + 2; \
-            }
-            if (hposp2 != 0)
-            {
-                hposp2 = PLAYER2_DFL_HPOS; \
-                hposm2 = PLAYER2_DFL_HPOS + 2; \
-            }
-            if (hposp3 != 0)
-            {
-                hposp3 = PLAYER3_DFL_HPOS; \
-                hposm3 = PLAYER3_DFL_HPOS + 2; \
-            }
-#endif
+            SET_ACTIVE_PLAYER_POS2(0, PLAYER0_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS2(1, PLAYER1_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS2(2, PLAYER2_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS2(3, PLAYER3_DFL_HPOS);
+
             lastTrigp0 = 1;
             lastTrigp1 = 1;
             lastTrigp2 = 1;
@@ -1468,8 +1513,9 @@ lyricBreak:
             hposDrone = 120;
             hposShadow = hposDrone - 16;
 
-            mainbgcolor = MAIN_COLOR_START;
+            mainbgcolor = MAIN_BG_COLOR;
             OS.color4 = mainbgcolor;
+            rageColor = 0x44;
 
             OS.vvblkd = &dvbi_routine_GameIdle;
             OS.vdslst = &dli_routine7;
@@ -1483,23 +1529,26 @@ lyricBreak:
             cline = 24;
             phrc = &rows[cline][0];
             phrd = &rows[dline][0];
-
+            vblanks = 4;
             ANTIC.nmien = 0xC0;
 #endif                
             day = 1;
             hposShadowDelta = 0;
             hposShadowCounts = 0;
             idleInit = 0;
+            minRockVal = 40;
+            minRepairVal = minRockVal + 15;
+            minEMPVal = minRepairVal + 5;
+            maxRockVal = 214;
+            maxRepairVal = maxRockVal - 15;
+            maxEMPVal = maxRepairVal - 5;
+            rageCount = 0;
         }
         else if (runInit == 1)
         {
 #if 1
             ANTIC.nmien = 0x00;
             
-#if RMT_RUN == 1
-            RMTInitRun;
-#endif
-
             hposDrone = 120;
             hposShadow = hposDrone - 16;
             hposShadowDelta = 0;
@@ -1515,14 +1564,10 @@ lyricBreak:
             colpm1 = 0;
             colpm2 = 0;
             colpm3 = 0;
-            trigCountp0 = 0;
-            trigCountp1 = 0;
-            trigCountp2 = 0;
-            trigCountp3 = 0;
-            for (paddle = 0; paddle < NUM_ROWS; paddle++)
-            {
-                memset(&rows[paddle][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
-            }
+            trigCountp0 = 1;
+            trigCountp1 = 1;
+            trigCountp2 = 1;
+            trigCountp3 = 1;
             OS.vvblkd = &dvbi_routine_GameRunning;
             OS.vdslst = &dli_routine7;
             OS.sdlst = (void *)DL_ADDR;
@@ -1542,12 +1587,11 @@ lyricBreak:
             OS.color1 = PF1_COLOR;
             OS.color2 = PF2_COLOR;
             OS.color3 = PF3_COLOR;
-            mainbgcolor = MAIN_COLOR_START;
+            mainbgcolor = MAIN_BG_COLOR;
             OS.color4 = mainbgcolor;
 
             /* Initialize and sitch to custom character set @ CS_ADDR */
             OS.chbas = CS_ADDR_HI;
-
             ANTIC.nmien = 0xC0;
 #endif                
             runInit = 0;
@@ -1559,27 +1603,17 @@ lyricBreak:
 
             dayInit = 0;
             vblanks = 0;
+            rageErase = 0;
+            lastDir = 0;
             waitForVBLANK();
             ANTIC.nmien = 0x00;
+#if RMT_RUN == 1
+            RMTInitRun;
+#endif
             memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
             OS.vvblkd = &dvbi_routine_Notice;
 
-            memset(&notice[0], 0, 40);
-
-            //notice[28] = ((day / 100) % 10 << 1) + CHAR_0;
-            //notice[29] = scoreStr[28] + 1;
-
-            //notice[30] = ((day / 10) % 10 << 1) + CHAR_0;
-            //notice[31] = notice[30] + 1;
-
-            notice[20] = ((day / 100) % 10) + 16;
-            notice[21] = ((day / 10) % 10) + 16;
-            notice[22] = (day % 10) + 16;
-
-            memcpy(&notice[16], "\x24" "ay", 3);
-
             OS.color0 = 0;
-            //OS.color1 = 0;
             OS.color2 = 0;
             OS.color3 = 0;
             OS.color4 = 0;
@@ -1591,16 +1625,181 @@ lyricBreak:
             SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
 
             ANTIC.nmien = 0xC0;
+
+            memset(&notice[0], 0, 40);
+
+            notice[20] = ((day / 100) % 10) + 16;
+            notice[21] = ((day / 10) % 10) + 16;
+            notice[22] = (day % 10) + 16;
+
+            memcpy(&notice[16], "\x24" "ay", 3);
+#if 1
+            for (paddle = 0; paddle < NUM_ROWS; paddle++)
+            {
+                memset(&rows[paddle][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
+            }
+#endif      
+            if (day > 1)
+            {
+                if (minRockVal < 80) minRockVal++;
+                if (maxRockVal > 174) minRockVal--;
+                if (day <= 5)
+                {
+                    minRepairVal = minRockVal + 10;
+                    minEMPVal =  minRepairVal + 4;
+                    maxRepairVal = maxRockVal - 10;
+                    maxEMPVal = maxRepairVal - 4;
+                }
+                else
+                {
+                    /* Limit minimum repairs and EMPs */
+                    minRepairVal = minRockVal + 5;
+                    minEMPVal =  minRepairVal + 3;
+                    maxRepairVal = maxRockVal - 5;
+                    maxEMPVal = maxRepairVal - 3;
+                }
+            }
+
+            /* Seed random number generator */
+            rs += PEEK(PADDL0);
+            rs += PEEK(PADDL1);
+            rs += PEEK(PADDL2);
+            rs += PEEK(PADDL3);
+        }
+        else if (flashInit == 1)
+        {
+            vblanks = 0;
+            vblankEnd = 1;
+            waitForVBLANK();
+            ANTIC.nmien = 0x00;
+            memcpy((void *)DL_ADDR, &dlistflash, DL_SIZE);
+            OS.vvblkd = &dvbi_routine_Flash;
+            lastRoutine = OS.vdslst;
+            OS.vdslst = &dli_routineNull;
+            if (rageErase) {
+                OS.color4 = 0x44;
+                droneVolume = 0;                
+                vblankEnd = 6;
+            }
+            else { OS.color4 = 0x0f; }
+            ANTIC.nmien = 0xC0;
+
+            if (rageErase)
+            {
+                flashInit = CHAR_BLANK;
+            }
+            else
+            {
+                flashInit = CHAR_CROP;
+            }
+            for (paddle = 0; paddle < NUM_ROWS; paddle++)
+            {
+                memset(&rows[paddle][ROW_ADDR_OFF], flashInit, NUM_PLAY_COLUMNS);
+            }
+            flashInit = 0;
+        }
+        else if (flashInit == 2)
+        {
+            waitForVBLANK();
+            ANTIC.nmien = 0x00;
+            flashInit = 0;
+#if 1      
+            OS.vvblkd = &dvbi_routine_GameRunning;
+            OS.vdslst = &dli_routine7;
+            OS.sdlst = (void *)DL_ADDR;
+            dl = (char *)DL_ADDR;
+            memcpy(dl, dlp, DL_SIZE);
+            line = 0;
+            fs = 7;
+            ANTIC.vscrol = fs;
+            dline = 5;
+            cline = 25;
+            phrc = &rows[cline][0];
+            phrd = &rows[dline][0];
+            vblanks = 0;
+            OS.color4 = mainbgcolor;
+
+#else       
+            OS.vvblkd = &dvbi_routine_GameRunning;
+            OS.vdslst = lastRoutine;
+            memcpy(dl, dlp, DL_SIZE);
+            //line = 0;
+            //fs = 7;
+            //dline = 5;
+            //cline = 25;
+            //phrc = &rows[cline][0];
+            //phrd = &rows[dline][0];
+            vblanks = 0;
+            OS.color4 = mainbgcolor;
+#if 1       
+            if (fs == 1)
+            {
+                if (cline == 0)
+                {
+                    /* Yes, start back at beginning */
+                    cline = NUM_ROWS - 1;
+                    phrc = &rows[NUM_ROWS - 1][0];
+                }
+                else
+                {
+                    cline--;
+                    phrc -= NUM_COLUMNS;
+                }
+
+                if (dline == 0)
+                {
+                    /* Yes, start back at beginning */
+                    dline = NUM_ROWS - 1;
+                    phrd = &rows[NUM_ROWS - 1][0];
+                }
+                else
+                {
+                    dline--;
+                    phrd -= NUM_COLUMNS;
+                }
+
+            }
+#else
+
+#endif
+#endif
+            ANTIC.nmien = 0xC0;
+        }
+        else if (dayInit == 2)
+        {
+            dayInit = 0;
+            vblanks = 0;
+            waitForVBLANK();
+            RMTStop;
+            ANTIC.nmien = 0x00;
+            memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
+            OS.vvblkd = &dvbi_routine_Gameover;
+
+            memset(&notice[0], 0, 40);
+            if (isEndOfDay == 1)
+            {
+                memcpy(&notice[0], gameOverEoD, 40);
+            }
+            else
+            {
+                memcpy(&notice[0], gameOverRock, 40);
+            }
+            isEndOfDay = 0;
+
+            OS.color0 = 0;
+            OS.color2 = 0;
+            OS.color3 = 0;
+            OS.color4 = 0;
+            OS.chbas = 0xE0;
+
+            ANTIC.nmien = 0xC0;
         }
 
-#if 1
-        droneTargetCount++;
-        if ((droneTargetCount == 320) && (hposp0 != 0)) { targeted = 0; droneTarget = hposp0 - 4; }
-        else if ((droneTargetCount == 640) && (hposp1 != 0)) { targeted = 0; droneTarget = hposp1 - 4; }
-        else if ((droneTargetCount == 960) && (hposp2 != 0)) { targeted = 0; droneTarget = hposp2 - 4; }
-        else if ((droneTargetCount == 1280) && (hposp3 != 0)) { targeted = 0; droneTarget = hposp3 - 4; }
-
-        if (droneTargetCount > 1280) droneTargetCount = 0;
-#endif            
+        /* Drone targeting logic; alternates targeting player positions */
+        if ((droneTargetCount == 40) && (pactive0 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp0 - 4; }
+        else if ((droneTargetCount == 80) && (pactive1 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp1 - 4;}
+        else if ((droneTargetCount == 120) && (pactive2 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp2 - 4; }
+        else if ((droneTargetCount == 160) && (pactive3 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp3 - 4; }
+        if (droneTargetCount > 160) droneTargetCount = 0;
     }
 }
