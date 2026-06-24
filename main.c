@@ -221,41 +221,51 @@ uint8_t rows[NUM_ROWS][NUM_COLUMNS];
 uint8_t notice[NUM_COLUMNS];
 #pragma bss-name (pop)
 
+#define PLAYER_SCORE1_BIT        (0x01u)
+#define PLAYER_SCORE2_BIT        (0x02u)
+#define PLAYER_ACTIVE_BIT        (0x04u)
+#define PLAYER_LAST_TRIG_BIT     (0x08u)
+#define PLAYER_NEW_DIR_LEFT      (0x10u)
+#define PLAYER_NEW_DIR_RIGHT     (0x20u)
+#define PLAYER_LAST_DIR_LEFT     (0x40u)
+#define PLAYER_LAST_DIR_RIGHT    (0x80u)
+
 #define DEFINE_PLAYER(pn) \
-    uint8_t pactive##pn; \
+    uint8_t state##pn; \
     uint8_t hposp##pn; \
     uint8_t hposm##pn; \
     uint8_t colpm##pn; \
-    uint8_t delayp##pn; \
-    uint8_t lastTrigp##pn; \
-    uint16_t trigCountp##pn; \
-    uint8_t lastDirp##pn; \
-    uint8_t newDirp##pn; \
-    uint8_t blowUp##pn;
+    uint8_t delay##pn;
 
 /* Frequently used variables - Put in Zero Page */
-#pragma data-name (push, "ZEROPAGE")
+#pragma bss-name (push,"ZEROPAGE")
+#pragma data-name(push,"ZEROPAGE")
+uint8_t fs;
+uint8_t paddle;
+uint8_t trigger;
 DEFINE_PLAYER(0)
 DEFINE_PLAYER(1)
 DEFINE_PLAYER(2)
 DEFINE_PLAYER(3)
+uint8_t hposDrone;
+uint8_t hposShadow;
 uint8_t wsyncCount;
+#pragma bss-name (pop)
+#pragma data-name(pop)
+
 uint8_t blowUp;
 uint8_t blown;
-uint8_t fs;
 uint8_t line;
 uint8_t dline;
 uint8_t cline;
 uint8_t rmtplayCount;
 uint8_t animation;
-uint8_t paddle;
-uint8_t trigger;
 uint16_t score;
 uint8_t ufoVolume;
 uint8_t droneVolume;
 uint8_t lastDir;
 uint8_t dvs;
-#pragma data-name (pop)
+uint8_t activateEMP;
 
 uint8_t *phrc; /* Player Row Pointer */
 uint8_t *phrct; /* Temp Player Row Pointer */
@@ -271,8 +281,6 @@ char *dl;
 unsigned char *dlp = &dlist;
 
 uint16_t hiscore;
-uint8_t hposDrone;
-uint8_t hposShadow;
 uint8_t hposShadowDelta;
 uint8_t hposShadowCounts;
 uint8_t day = 1;
@@ -281,6 +289,7 @@ uint8_t rev;
 uint8_t volume;
 uint8_t tone;
 uint8_t ramp;
+uint8_t lostEMPs;
 
 uint8_t droneTarget;
 uint8_t targeted;
@@ -634,37 +643,44 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
     if (rmtplayCount > MUSIC_PLAY_COUNT) rmtplayCount = 0;
 
 #define MOVE_PLAYER(pn, lb, ub) \
-    /* Read paddle */ \
-    if ((pactive##pn != 0) && (hposp##pn != 0)) { \
-    trigger = PEEK(PTRIG##pn); \
-    paddle = PEEK(PADDL##pn); \
-    /* Determine new steering direction */ \
-    if (paddle > PADDLE_STEER_LEFT) newDirp##pn = 0; \
-    else if (paddle < PADDLE_STEER_RIGHT) newDirp##pn = 4; \
-    else newDirp##pn = 2; \
-    /* Trigger pressed or Player changed direction? */ \
-    if (((trigger == 0) && (lastTrigp##pn != 0)) || (newDirp##pn != lastDirp##pn)) \
+    /* Is player enabled and shown on field? */ \
+    if (((state##pn & PLAYER_ACTIVE_BIT) != 0) && (hposp##pn != 0)) \
     { \
-      /* Yes, force move now */ \
-      lastDirp##pn = newDirp##pn; \
-      delayp##pn = PADDLE_STEER_DELAY; \
-    } \
-    lastTrigp##pn = trigger; \
-    delayp##pn++; \
-    if (delayp##pn > PADDLE_STEER_DELAY) \
-    { \
-      /* Move player, update steering indicator */ \
-      delayp##pn = 0; \
-      if (paddle > PADDLE_STEER_LEFT) { if (hposp##pn > lb) hposp##pn += -4; hposm##pn = hposp##pn; } \
-      else if (paddle < PADDLE_STEER_RIGHT) { if (hposp##pn < ub) hposp##pn += 4; hposm##pn = hposp##pn + 4; } \
-      else hposm##pn = hposp##pn + 2; \
-    } }
+        trigger = PEEK(PTRIG##pn); \
+        paddle = PEEK(PADDL##pn); \
+        /* Determine new steering direction */ \
+        if (paddle > PADDLE_STEER_LEFT) { state##pn &= ~PLAYER_NEW_DIR_RIGHT; state##pn |= PLAYER_NEW_DIR_LEFT; } \
+        else if (paddle < PADDLE_STEER_RIGHT) { state##pn &= ~PLAYER_NEW_DIR_LEFT; state##pn |= PLAYER_NEW_DIR_RIGHT; }\
+        else { state##pn |= (PLAYER_NEW_DIR_LEFT | PLAYER_NEW_DIR_RIGHT); } \
+        /* Trigger pressed or Player changed direction? */ \
+        if (((trigger == 0) && ((state##pn & PLAYER_LAST_TRIG_BIT) != 0)) || \
+            (((state##pn >> 4) & 0x03) != (state##pn >> 6))) \
+        { \
+            /* Yes, update last position  */ \
+            state##pn &= ~(PLAYER_LAST_DIR_LEFT | PLAYER_LAST_DIR_RIGHT); \
+            state##pn |= (state##pn & (PLAYER_NEW_DIR_LEFT | PLAYER_NEW_DIR_RIGHT)) << 2; \
+            /* Force immediate move */ \
+            delay##pn = PADDLE_STEER_DELAY; \
+        } \
+        /* Update last trigger state */ \
+        if (trigger == 0) { state##pn &= ~PLAYER_LAST_TRIG_BIT; } \
+        else { state##pn |= PLAYER_LAST_TRIG_BIT; } \
+        delay##pn++; \
+        if (delay##pn > PADDLE_STEER_DELAY) \
+        { \
+          /* Move player, update steering indicator */ \
+          delay##pn = 0; \
+          if (paddle > PADDLE_STEER_LEFT) { if (hposp##pn > lb) hposp##pn += -4; hposm##pn = hposp##pn; } \
+          else if (paddle < PADDLE_STEER_RIGHT) { if (hposp##pn < ub) hposp##pn += 4; hposm##pn = hposp##pn + 4; } \
+          else hposm##pn = hposp##pn + 2; \
+        } \
+    }
 
 #define HIT_PLAYER_SUB(pn) \
-    if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score += trigCountp##pn; } \
-    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { dayInit = 2; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; trigCountp##pn = 0; } } \
-    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; trigCountp##pn = 2; } \
-    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; trigCountp##pn = 1; rageCount++; }
+    if (*phrct == CHAR_CROP) { *phrct = CHAR_BLANK; score += state##pn &= ~(PLAYER_SCORE1_BIT | PLAYER_SCORE2_BIT); } \
+    else if (*phrct == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { /*dayInit = 2;*/ } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; state##pn &= ~(PLAYER_SCORE1_BIT | PLAYER_SCORE2_BIT); } } \
+    else if (*phrct == (CHAR_EMP | 0x80)) { *phrct = CHAR_BLANK; colpm##pn = (HUE_BLUE2 << 4) | 0x06; state##pn &= ~(PLAYER_SCORE1_BIT); state##pn |= PLAYER_SCORE2_BIT; } \
+    else if (*phrct == CHAR_REPAIR) { *phrct = CHAR_BLANK; colpm##pn = 0; state##pn &= ~(PLAYER_SCORE2_BIT); state##pn |= PLAYER_SCORE1_BIT; rageCount++; }
 
 #define HIT_PLAYER(pn) if (hposp##pn != 0) { \
     paddle = (hposp##pn - (PLAYER_MIN_HPOS - PLAYER_WIDTH)) >> 2; \
@@ -675,46 +691,47 @@ DLI_ROUTINE(7, 6, 1, 1, 23)
 }
 
 #define BLOW_PLAYER(pn) { \
-    blowUp##pn = !pactive##pn; \
-    if ((hposp##pn != 0) && (hposm##pn != 0) && (lastTrigp##pn == 0) && ((colpm##pn & 0xF0) == (HUE_BLUE2 << 4))) { blowUp##pn = 1; } }
+    activateEMP |= ((!(state##pn & PLAYER_ACTIVE_BIT)) << pn); \
+    if ((hposp##pn != 0) && (hposm##pn != 0) && ((state##pn & PLAYER_LAST_TRIG_BIT) == 0) && ((colpm##pn & 0xF0) == (HUE_BLUE2 << 4))) { activateEMP |= (0x01 << pn); } }
 
 #define TOGGLE_PLAYER(pn) \
     /* Read paddle */ \
     trigger = PEEK(PTRIG##pn); \
-    if ((trigger == 1) && (lastTrigp##pn != trigger)) \
+    if ((trigger == 1) && ((state##pn && PLAYER_LAST_TRIG_BIT) != trigger)) \
     { \
-        if (trigCountp##pn < 15) { \
+        if (delay##pn < 15) { \
             POKE(77, 0); \
-            if (pactive##pn == 0) \
+            if ((state##pn & PLAYER_ACTIVE_BIT) == 0) \
             { \
                 hposp##pn = PLAYER##pn##_DFL_HPOS; \
                 hposm##pn = PLAYER##pn##_DFL_HPOS + 2; \
-                pactive##pn = 1; \
+                state##pn |= PLAYER_ACTIVE_BIT; \
             } \
             else \
             { \
                 hposm##pn = 0; \
                 hposp##pn = 0; \
-                pactive##pn = 0; \
+                state##pn &= ~PLAYER_ACTIVE_BIT; \
             } \
         } \
-        trigCountp##pn = 0; \
+        delay##pn = 0; \
     } \
     else if (trigger == 0) { \
-        trigCountp##pn++; \
-        if ((trigCountp##pn > 180) && (pactive##pn != 0)) { \
-            trigCountp##pn = 0; \
+        delay##pn++; \
+        if ((delay##pn > 180) && ((state##pn & PLAYER_ACTIVE_BIT) != 0)) { \
+            delay##pn = 0; \
             dayInit = 1; \
         } \
     } \
-    lastTrigp##pn = trigger;
+    if (trigger == 0) { state##pn &= ~PLAYER_LAST_TRIG_BIT; } \
+    else { state##pn |= PLAYER_LAST_TRIG_BIT; }
 
 void dvbi_routine_GameIdleInit(void);
 void dvbi_routine_Notice(void);
 void dvbi_routine_Flash(void);
 
-#define SET_ACTIVE_PLAYER_POS(pn,pos) if (pactive##pn != 0) { hposm##pn = pos; hposp##pn = pos; }
-#define SET_ACTIVE_PLAYER_POS2(pn,pos) if (pactive##pn != 0) { hposm##pn = pos + 2; hposp##pn = pos; }
+#define SET_ACTIVE_PLAYER_POS(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos; hposp##pn = pos; }
+#define SET_ACTIVE_PLAYER_POS2(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos + 2; hposp##pn = pos; }
 
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Started                                                              */
@@ -722,6 +739,20 @@ void dvbi_routine_Flash(void);
 void dvbi_routine_GameRunning(void)
 {
     GTIA_WRITE.prior = PRIOR_P03_PF03;
+
+    /* Player positions are updated every vertical blank */
+    GTIA_WRITE.colbk = 0;
+    if (fs & 0x01)
+    {
+        MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    }
+    else
+    {
+        MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    }
+    GTIA_WRITE.colbk = mainbgcolor;
 
     if (blown == 0)
     {
@@ -757,32 +788,12 @@ void dvbi_routine_GameRunning(void)
             hposDrone++;
             hposShadow = hposShadowDelta + hposDrone - 16;    
             lastDir = 1; 
-#if 0                   
-            if (droneVolume == 0)
-            {
-                if ((dvs != 0)) { dvs = 0; droneVolume = 45; volume = 150; tone = 5; }
-            }
-            else
-            {
-                dvs = 0;
-            }
-#endif                
         }
         else if (targeted == 2)
         {
             hposDrone--;
             hposShadow = hposShadowDelta + hposDrone - 16;
             lastDir = 2;
-#if 0            
-            if (droneVolume == 0)
-            {
-                if ((dvs != 0)) { dvs = 0; droneVolume = 45; volume = 150; tone = 3; }
-            }
-            else
-            {
-                dvs = 0;
-            }
-#endif                
         }
     }
 
@@ -843,9 +854,6 @@ void dvbi_routine_GameRunning(void)
             dline--;
             phrd -= NUM_COLUMNS;
         }
-
-        //memset(&rows[line], 1, NUM_COLUMNS);
-
 #endif            
     }
     else if (fs == 2)
@@ -861,50 +869,64 @@ void dvbi_routine_GameRunning(void)
         if (blowUp != 0)
         {
             if (blowUp == 1) {
-                ufoVolume = 15;
-                //hposDrone = 120; 
+                if (lostEMPs == 0)
+                {
+                    ufoVolume = 15;
+                }
                 blowUp++;
                 mainbgcolor = 0x0d;
                 OS.color4 = mainbgcolor;
             }
             else if (blowUp == 2) {
-                GTIA_WRITE.sizep0 = 1;
-                GTIA_WRITE.sizep1 = 1;
-                GTIA_WRITE.sizep2 = 1;
-                GTIA_WRITE.sizep3 = 1;
-                //hposDrone = 120 - 4;
-                hposDrone -= 4;
+                if (lostEMPs == 0)
+                {
+                    GTIA_WRITE.sizep0 = 1;
+                    GTIA_WRITE.sizep1 = 1;
+                    GTIA_WRITE.sizep2 = 1;
+                    GTIA_WRITE.sizep3 = 1;
+                    hposDrone -= 4;
+                }
                 blowUp++;
                 mainbgcolor = 0x0f;
                 OS.color4 = mainbgcolor;
             }
             else if (blowUp == 3) {
-                GTIA_WRITE.sizep0 = 3;
-                GTIA_WRITE.sizep1 = 3;
-                GTIA_WRITE.sizep2 = 3;
-                GTIA_WRITE.sizep3 = 3;
-                //hposDrone = 120 - 12;
-                hposDrone -= 12;
+                if (lostEMPs == 0)
+                {
+                    GTIA_WRITE.sizep0 = 3;
+                    GTIA_WRITE.sizep1 = 3;
+                    GTIA_WRITE.sizep2 = 3;
+                    GTIA_WRITE.sizep3 = 3;
+                    hposDrone -= 12;
+                }
                 blowUp++;
                 mainbgcolor = 0x0d;
                 OS.color4 = mainbgcolor;
             }
             else {
-                /* Hide the drone */
-                GTIA_WRITE.sizep0 = 0;
-                GTIA_WRITE.sizep1 = 0;
-                GTIA_WRITE.sizep2 = 0;
-                GTIA_WRITE.sizep3 = 0;
-                hposDrone = 0;
-                hposShadow = 0;
-                blown = 1;
+                if (lostEMPs == 0)
+                {
+                    /* Hide the drone */
+                    GTIA_WRITE.sizep0 = 0;
+                    GTIA_WRITE.sizep1 = 0;
+                    GTIA_WRITE.sizep2 = 0;
+                    GTIA_WRITE.sizep3 = 0;
+                    hposDrone = 0;
+                    hposShadow = 0;
+                    blown = 1;
+                }
                 blowUp++;
                 OS.color4 = mainbgcolor;
                 mainbgcolor = MAIN_BG_COLOR;
             }
             if (blowUp > 16)
             {
-                dayInit = 1;                
+                if (lostEMPs == 0)
+                {
+                    dayInit = 1;                
+                }
+                blowUp = 0;
+                lostEMPs = 0;
             }
         }
         else
@@ -1009,19 +1031,36 @@ void dvbi_routine_GameRunning(void)
         /* Check for blow up drone */
         if ((blowUp == 0) && (blown == 0))
         {
+            activateEMP = 0;
             BLOW_PLAYER(0);
             BLOW_PLAYER(1);
             BLOW_PLAYER(2);
             BLOW_PLAYER(3);
-            if (blowUp0 && blowUp1 && blowUp2 && blowUp3)
+
+            /* All players firing EMP at same time? */
+            if (activateEMP == 0x0F)
             {
-                /* Hide players and blow up drone */
-                SET_ACTIVE_PLAYER_POS(0,0);
-                SET_ACTIVE_PLAYER_POS(1,0);
-                SET_ACTIVE_PLAYER_POS(2,0);
-                SET_ACTIVE_PLAYER_POS(3,0);
+                /* Yes, drone in field? */
+                if (hposDrone >= (PLAYER_MIN_HPOS - 4) && hposDrone < (PLAYER_MAX_HPOS - 8))
+                {
+                    /* Hide players and blow up drone */
+                    SET_ACTIVE_PLAYER_POS(0,0);
+                    SET_ACTIVE_PLAYER_POS(1,0);
+                    SET_ACTIVE_PLAYER_POS(2,0);
+                    SET_ACTIVE_PLAYER_POS(3,0);
+                }
+                else
+                {
+                    /* Players lose EMPs and score 1pt per crop */
+                    colpm0 = 0;
+                    colpm1 = 0;
+                    colpm2 = 0;
+                    colpm3 = 0;
+
+                    /* EMP flash still occurs */
+                    lostEMPs = 1;                    
+                }
                 blowUp = 1;
-                //flashInit = 1;
             }
         }
     }
@@ -1069,18 +1108,6 @@ void dvbi_routine_GameRunning(void)
             }
         }
 #endif
-    }
-
-    /* Player positions are updated every vertical blank */
-    if (fs & 0x01)
-    {
-        MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-        MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    }
-    else
-    {
-        MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-        MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     }
 
     /* Update drone targeting counter */
@@ -1407,11 +1434,11 @@ lyricBreak:
     phrc = &rows[cline][0];
     phrd = &rows[dline][0];
 
-    /* Initialize position of players */
-    lastTrigp0 = 1;
-    lastTrigp1 = 1;
-    lastTrigp2 = 1;
-    lastTrigp3 = 1;
+    /* Initialize Player's last trigger value */
+    state0 |= PLAYER_LAST_TRIG_BIT;
+    state1 |= PLAYER_LAST_TRIG_BIT;
+    state2 |= PLAYER_LAST_TRIG_BIT;
+    state3 |= PLAYER_LAST_TRIG_BIT;
 
     /* Initialize playfield colors */
     OS.color0 = PF0_COLOR;
@@ -1421,7 +1448,6 @@ lyricBreak:
     OS.color4 = mainbgcolor;
 
     /* Install Delayed VBI, DLI, and Display List */
-    //OS.vvblkd = dvbi_routine_GameStarted;
     idleInit = 1;
     OS.vvblkd = &dvbi_routine_GameIdleInit;
     ANTIC.nmien = 0xC0;
@@ -1444,10 +1470,7 @@ lyricBreak:
 #if RMT_RUN == 1      
             RMTInitIdle;
 #endif
-            //WRITE_TEXT(9, ROW_ADDR_OFF, togglePlayerStr, sizeof(togglePlayerStr));
-            //WRITE_TEXT(10, ROW_ADDR_OFF, fireStartStr, sizeof(fireStartStr));
             /* Generate Farmsquad logo */
-            //const char framsquad[FARM_SQUAD_LINES][NUM_PLAY_COLUMNS] =
             for (paddle = 0; paddle < NUM_ROWS; paddle++)
             {
                 memset(&rows[paddle][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
@@ -1503,18 +1526,19 @@ lyricBreak:
             SET_ACTIVE_PLAYER_POS2(2, PLAYER2_DFL_HPOS);
             SET_ACTIVE_PLAYER_POS2(3, PLAYER3_DFL_HPOS);
 
-            lastTrigp0 = 1;
-            lastTrigp1 = 1;
-            lastTrigp2 = 1;
-            lastTrigp3 = 1;
+            state0 |= PLAYER_LAST_TRIG_BIT;
+            state1 |= PLAYER_LAST_TRIG_BIT;
+            state2 |= PLAYER_LAST_TRIG_BIT;
+            state3 |= PLAYER_LAST_TRIG_BIT;
+
             colpm0 = 0;
             colpm1 = 0;
             colpm2 = 0;
             colpm3 = 0;
-            trigCountp0 = 0;
-            trigCountp1 = 0;
-            trigCountp2 = 0;
-            trigCountp3 = 0;
+            delay0 = 0;
+            delay1 = 0;
+            delay2 = 0;
+            delay3 = 0;
 
             hposDrone = 120;
             hposShadow = hposDrone - 16;
@@ -1562,18 +1586,21 @@ lyricBreak:
             blowUp = 0;
             blown = 0;
 
-            lastTrigp0 = 1;
-            lastTrigp1 = 1;
-            lastTrigp2 = 1;
-            lastTrigp3 = 1;
+            state0 |= PLAYER_LAST_TRIG_BIT;
+            state1 |= PLAYER_LAST_TRIG_BIT;
+            state2 |= PLAYER_LAST_TRIG_BIT;
+            state3 |= PLAYER_LAST_TRIG_BIT;
+
             colpm0 = 0;
             colpm1 = 0;
             colpm2 = 0;
             colpm3 = 0;
-            trigCountp0 = 1;
-            trigCountp1 = 1;
-            trigCountp2 = 1;
-            trigCountp3 = 1;
+     
+            delay0 = 1;
+            delay1 = 1;
+            delay2 = 1;
+            delay3 = 1;
+
             OS.vvblkd = &dvbi_routine_GameRunning;
             OS.vdslst = &dli_routine7;
             OS.sdlst = (void *)DL_ADDR;
@@ -1624,6 +1651,14 @@ lyricBreak:
             OS.color3 = 0;
             OS.color4 = 0;
             OS.chbas = 0xE0;
+
+#if 0
+            /* Enable ALL players for testing */
+            state0 |= PLAYER_ACTIVE_BIT;
+            state1 |= PLAYER_ACTIVE_BIT;
+            state2 |= PLAYER_ACTIVE_BIT;
+            state3 |= PLAYER_ACTIVE_BIT;
+#endif
 
             SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
             SET_ACTIVE_PLAYER_POS(1, PLAYER1_DFL_HPOS);
@@ -1709,7 +1744,6 @@ lyricBreak:
             waitForVBLANK();
             ANTIC.nmien = 0x00;
             flashInit = 0;
-#if 1      
             OS.vvblkd = &dvbi_routine_GameRunning;
             OS.vdslst = &dli_routine7;
             OS.sdlst = (void *)DL_ADDR;
@@ -1725,50 +1759,6 @@ lyricBreak:
             vblanks = 0;
             OS.color4 = mainbgcolor;
 
-#else       
-            OS.vvblkd = &dvbi_routine_GameRunning;
-            OS.vdslst = lastRoutine;
-            memcpy(dl, dlp, DL_SIZE);
-            //line = 0;
-            //fs = 7;
-            //dline = 5;
-            //cline = 25;
-            //phrc = &rows[cline][0];
-            //phrd = &rows[dline][0];
-            vblanks = 0;
-            OS.color4 = mainbgcolor;
-#if 1       
-            if (fs == 1)
-            {
-                if (cline == 0)
-                {
-                    /* Yes, start back at beginning */
-                    cline = NUM_ROWS - 1;
-                    phrc = &rows[NUM_ROWS - 1][0];
-                }
-                else
-                {
-                    cline--;
-                    phrc -= NUM_COLUMNS;
-                }
-
-                if (dline == 0)
-                {
-                    /* Yes, start back at beginning */
-                    dline = NUM_ROWS - 1;
-                    phrd = &rows[NUM_ROWS - 1][0];
-                }
-                else
-                {
-                    dline--;
-                    phrd -= NUM_COLUMNS;
-                }
-
-            }
-#else
-
-#endif
-#endif
             ANTIC.nmien = 0xC0;
         }
         else if (dayInit == 2)
@@ -1802,10 +1792,10 @@ lyricBreak:
         }
 
         /* Drone targeting logic; alternates targeting player positions */
-        if ((droneTargetCount == 40) && (pactive0 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp0 - 4; }
-        else if ((droneTargetCount == 80) && (pactive1 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp1 - 4;}
-        else if ((droneTargetCount == 120) && (pactive2 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp2 - 4; }
-        else if ((droneTargetCount == 160) && (pactive3 != 0)) { dvs = 1; targeted = 0; droneTarget = hposp3 - 4; }
+        if ((droneTargetCount == 40) && ((state0 & PLAYER_ACTIVE_BIT) != 0))       { dvs = 1; droneTarget = hposp0 - 4; targeted = 0; }
+        else if ((droneTargetCount == 80) && ((state1 & PLAYER_ACTIVE_BIT) != 0))  { dvs = 1; droneTarget = hposp1 - 4; targeted = 0; }
+        else if ((droneTargetCount == 120) && ((state2 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp2 - 4; targeted = 0; }
+        else if ((droneTargetCount == 160) && ((state3 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp3 - 4; targeted = 0; }
         if (droneTargetCount > 160) droneTargetCount = 0;
     }
 }

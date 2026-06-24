@@ -42,7 +42,7 @@ A remotely operated Drone kills Crops in its path with an electrolyic energy dri
 
 Each Player harvests Crops and must dodge Rocks to avoid damage. If a Player hits a Rock they turn magenta to indicate damage, a second Rock hit will end the game for all Players. Collecting a magenta Repair or blue EMP fixes a damaged Player.
 
-If an EMP is collected the Player turns blue. If a Player collects a Repair or hits a Rock they lose their EMP. When ALL Players have an EMP they can simultaneously hold down their paddle buttons to destroy the drone. When the drone is destroyed the day ends and the next day begins.
+If an EMP is collected the Player turns blue. If a Player collects a Repair or hits a Rock they lose their EMP. When ALL Players have an EMP they can simultaneously hold down their paddle buttons to destroy the Drone between the walls. Be careful, Players activating their EMPs when the Drone is not fully between the walls will lose their EMPs and the Drone will not be affected. When the drone is successfully destroyed the day immediately ends and the next day begins.
 
 Players must destroy the drone before the end of day otherwise the game ends for all Players. The Drone's shadow moves from left to right during the day indicating how much daylight is left. As dusk decends only a little time remains for the Players to destroy the Drone.
 
@@ -52,7 +52,7 @@ As the days progress, gameplay gets more difficult. The Drone turns up more Rock
 
 When damaged (Magenta) the Player does not score points.
 When not damaged (Black) the Player scores 1 point for every cell of Crop harvested.
-When charged with an EMP (Blue) the Player scores 2 points for every cell of Crop harvested.
+When charged with an EMP (Blue) the Player scores 3 points for every cell of Crop harvested.
 
 On the Attract screen the score for the last play is displayed to the left of the HI score, cycling between other game instructions.
 
