@@ -235,6 +235,10 @@ uint8_t notice[NUM_COLUMNS];
 
 /* Frequently used variables - Put in Zero Page */
 #pragma data-name (push, "ZEROPAGE")
+DEFINE_PLAYER(0)
+DEFINE_PLAYER(1)
+DEFINE_PLAYER(2)
+DEFINE_PLAYER(3)
 uint8_t wsyncCount;
 uint8_t blowUp;
 uint8_t blown;
@@ -251,10 +255,6 @@ uint8_t ufoVolume;
 uint8_t droneVolume;
 uint8_t lastDir;
 uint8_t dvs;
-DEFINE_PLAYER(0)
-DEFINE_PLAYER(1)
-DEFINE_PLAYER(2)
-DEFINE_PLAYER(3)
 #pragma data-name (pop)
 
 uint8_t *phrc; /* Player Row Pointer */
@@ -1072,10 +1072,16 @@ void dvbi_routine_GameRunning(void)
     }
 
     /* Player positions are updated every vertical blank */
-    MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    if (fs & 0x01)
+    {
+        MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    }
+    else
+    {
+        MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+    }
 
     /* Update drone targeting counter */
     droneTargetCount++;
