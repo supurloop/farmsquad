@@ -87,7 +87,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -122,7 +123,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -157,7 +159,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -192,7 +195,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -227,7 +231,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -262,7 +267,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -297,7 +303,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -332,7 +339,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -367,7 +375,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -402,7 +411,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -437,7 +447,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -472,7 +483,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -507,7 +519,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -542,7 +555,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -577,7 +591,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -612,7 +627,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -647,7 +663,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -682,7 +699,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -717,7 +735,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -752,7 +771,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -787,7 +807,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -822,7 +843,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -857,7 +879,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -892,7 +915,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -927,7 +951,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -962,7 +987,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -997,7 +1023,8 @@ const void dlist =
         &rows[0],\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -1032,7 +1059,8 @@ const void dlist =
         DL_VSCROL(DL_LMS(DL_CHR40x8x4)),\
         &rows[0],\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -1067,7 +1095,8 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_LMS(DL_CHR40x8x4)),\
         &rows[0],\
-        DL_CHR40x8x4,\
+        DL_VSCROL(DL_CHR40x8x4),\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 
@@ -1101,8 +1130,9 @@ const void dlist =
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
         DL_VSCROL(DL_CHR40x8x4),\
-        DL_LMS(DL_CHR40x8x4),\
+        DL_LMS(DL_VSCROL(DL_CHR40x8x4)),\
         &rows[0],\
+        DL_BLK8, \
         DL_JVB,\
         0x0600,
 };
