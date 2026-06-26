@@ -93,6 +93,8 @@
 #define PF3_COLOR 0x86 /* Blue EMPs */
 #define MAIN_BG_COLOR 0x2f /* Light yellow */
 
+
+
 void dli_routine6(void);
 /* --------------------------------------------------------------------------------------------- */
 /* Macros to convert single byte chars into double byte chars                                    */
@@ -242,7 +244,7 @@ uint8_t notice[NUM_COLUMNS];
 /* Frequently used variables - Put in Zero Page */
 #pragma bss-name (push,"ZEROPAGE")
 #pragma data-name(push,"ZEROPAGE")
-uint8_t fs;
+uint8_t jlh;
 uint8_t paddle;
 DEFINE_PLAYER(0)
 DEFINE_PLAYER(1)
@@ -261,6 +263,7 @@ uint8_t *phrd; /* Drone Row Pointer */
 #pragma bss-name (pop)
 #pragma data-name(pop)
 
+uint8_t fs;
 uint8_t fs1 = 1;
 uint8_t fs2 = 7;
 uint8_t gs;
@@ -281,22 +284,22 @@ uint8_t dvs;
 uint8_t activateEMP;
 uint8_t paddleRate[16] =
 {
-    16, //0 r
-    12, 
-    8,  
-    4,
-    2,
-    1,  //5r
-    1,  //n
-    1,  //n
-    1,  //l
-    2,
-    4, //10
+    32, //0 r
+    24, 
+    16,  
     8,
-    12,
-    16, // 13 max
+    4,
+    2,  //5r
+    2,  //n
+    2,  //n
+    2,  //l
+    4,
+    8, //10
     16,
-    16, //15
+    24,
+    32, // 13 max
+    32,
+    32, //15
 };
 
 void *lastRoutine;
@@ -566,7 +569,6 @@ const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "a
 void dli_routine7(void);
 void dli_routineNull(void);
 
-uint8_t jlh = 7;
 #define DLI_DELAY() \
     GTIA_WRITE.sizep3 = 1; \
     ANTIC.wsync = 0; \
@@ -673,25 +675,75 @@ DLI_ROUTINE(7, 7, 2, 2, 17, 7)
 
 #define MUSIC_PLAY_COUNT (5) /* NTSC */
 #define PLAY_MUSIC() \
-    if (rmtplayCount < MUSIC_PLAY_COUNT) RMTPlay; \
-    rmtplayCount++; \
-    if (rmtplayCount > MUSIC_PLAY_COUNT) rmtplayCount = 0;
+    if (rmtplayCount < 1) { rmtplayCount = 7; } \
+    rmtplayCount--; \
+    if (rmtplayCount < MUSIC_PLAY_COUNT) RMTPlay;
 
-#define HIT_PLAYER_SUB(pn) \
+uint8_t pcc0;
+uint8_t *pcp0;
+uint8_t pcc1;
+uint8_t *pcp1;
+uint8_t pcc2;
+uint8_t *pcp2;
+uint8_t pcc3;
+uint8_t *pcp3;
+
+#define HIT_PLAYER_MAIN_SUB(pn) \
+    pcc##pn = *pcp##pn; \
+    if (pcc##pn == CHAR_CROP) { score++; *pcp##pn = CHAR_BLANK; } \
+    else if (pcc##pn == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { /* dayInit = 2; */} else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
+    else if (pcc##pn == CHAR_REPAIR) { colpm##pn = 0; *pcp##pn = CHAR_BLANK;} \
+    else if (pcc##pn == (CHAR_EMP | 0x80)) { colpm##pn = (HUE_BLUE2 << 4) |  0x06; *pcp##pn = CHAR_BLANK;}
+
+#define HIT_PLAYER_MAIN(pn) \
+    if (pcp##pn != NULL) { \
+        HIT_PLAYER_MAIN_SUB(pn); \
+        pcp##pn++; \
+        HIT_PLAYER_MAIN_SUB(pn); \
+        pcp##pn = NULL; \
+}
+    
+
+#define HIT_PLAYER_SUB555(pn) \
     paddle = *phrct; \
     *phrct = CHAR_BLANK; \
-    if (paddle == CHAR_CROP) { score += state##pn &= ~(PLAYER_SCORE1_BIT | PLAYER_SCORE2_BIT); } \
-    else if (paddle == CHAR_ROCK) { *phrct = CHAR_ROCK; if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { dayInit = 2; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; state##pn &= ~(PLAYER_SCORE1_BIT | PLAYER_SCORE2_BIT); } } \
-    else if (paddle == CHAR_REPAIR) { colpm##pn = 0; state##pn &= ~(PLAYER_SCORE2_BIT); state##pn |= PLAYER_SCORE1_BIT; rageCount++; } \
-    else if (paddle == (CHAR_EMP | 0x80)) { colpm##pn = (HUE_BLUE2 << 4) | 0x06; state##pn &= ~(PLAYER_SCORE1_BIT); state##pn |= PLAYER_SCORE2_BIT; }
+    if (paddle == CHAR_CROP) { score++; } \
+    else if (paddle == CHAR_ROCK) { *phrct = CHAR_ROCK; if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) { /* dayInit = 2; */} else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
+    else if (paddle == CHAR_REPAIR) { colpm##pn = 0; } \
+    else if (paddle == (CHAR_EMP | 0x80)) { colpm##pn = (HUE_BLUE2 << 4) | 0x06; }
 
 #define HIT_PLAYER(pn) if (hposp##pn != 0) { \
     paddle = (hposp##pn - (PLAYER_MIN_HPOS - PLAYER_WIDTH)) >> 2; \
-    phrct = phrc + paddle; \
-    HIT_PLAYER_SUB(pn); \
-    phrct++; \
-    HIT_PLAYER_SUB(pn); \
+    pcp##pn = phrc + paddle; \
 }
+
+
+#define HIT_PLAYER_SUB2(pn) \
+    switch (paddle) \
+    { \
+        case CHAR_CROP: \
+            score++; \
+            break; \
+        case CHAR_ROCK: \
+            *phrct = CHAR_ROCK; \
+            if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) \
+            { \
+             /* dayInit = 2; */ \
+            } \
+            else \
+            { \
+                colpm##pn = (HUE_MAGENTA << 4) | 0x06; \
+            } \
+            break; \
+        case CHAR_REPAIR: \
+            colpm##pn = 0; \
+            break; \
+        case CHAR_EMP: \
+            colpm##pn = (HUE_BLUE2 << 4) | 0x06; \
+            break; \
+    }
+
+
 
 #define MOVE_PLAYER(pn, lb, ub) \
     /* Is player on field? */ \
@@ -707,8 +759,8 @@ DLI_ROUTINE(7, 7, 2, 2, 17, 7)
         if (delay##pn > PADDLE_STEER_DELAY) \
         { \
           /* Yes, move player, update steering indicator */ \
-          if (paddle > PADDLE_STEER_LEFT) { if (hposp##pn > lb) hposp##pn += -4; hposm##pn = hposp##pn; delay##pn = 0; } \
-          else if (paddle < PADDLE_STEER_RIGHT) { if (hposp##pn < ub) hposp##pn += 4; hposm##pn = hposp##pn + 4; delay##pn = 0; } \
+          if (paddle > PADDLE_STEER_LEFT) { if (hposp##pn > lb) {  hposp##pn += -4; } hposm##pn = hposp##pn; delay##pn = 0; } \
+          else if (paddle < PADDLE_STEER_RIGHT) { if (hposp##pn < ub) { hposp##pn += 4; } hposm##pn = hposp##pn + 4; delay##pn = 0; } \
           else { hposm##pn = hposp##pn + 2; delay##pn = PADDLE_STEER_DELAY; } \
         } \
     }
@@ -723,11 +775,12 @@ DLI_ROUTINE(7, 7, 2, 2, 17, 7)
     trigger = PEEK(PTRIG##pn); \
     if ((trigger == 1) && (((state##pn & PLAYER_LAST_TRIG_BIT) != 0) != trigger)) \
     { \
-        if (delay##pn < 15) { \
+        if (delay##pn < 5) { \
             POKE(77, 0); \
             if ((state##pn & PLAYER_ACTIVE_BIT) == 0) \
             { \
                 hposp##pn = PLAYER##pn##_DFL_HPOS; \
+                paddle = (hposp##pn - 48) >> 2; \
                 hposm##pn = PLAYER##pn##_DFL_HPOS + 2; \
                 state##pn |= PLAYER_ACTIVE_BIT; \
             } \
@@ -742,7 +795,7 @@ DLI_ROUTINE(7, 7, 2, 2, 17, 7)
     } \
     else if (trigger == 0) { \
         delay##pn++; \
-        if ((delay##pn > 180) && ((state##pn & PLAYER_ACTIVE_BIT) != 0)) { \
+        if ((delay##pn > 22) && ((state##pn & PLAYER_ACTIVE_BIT) != 0)) { \
             delay##pn = 0; \
             dayInit = 1; \
         } \
@@ -754,17 +807,21 @@ void dvbi_routine_GameIdleInit(void);
 void dvbi_routine_Notice(void);
 void dvbi_routine_Flash(void);
 
-#define SET_ACTIVE_PLAYER_POS(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos; hposp##pn = pos; }
-#define SET_ACTIVE_PLAYER_POS2(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos + 2; hposp##pn = pos; }
-
+#define SET_ACTIVE_PLAYER_POS(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos; hposp##pn = pos; paddle = (hposp##pn - 48) >> 2;  }
+#define SET_ACTIVE_PLAYER_POS2(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos + 2; hposp##pn = pos;  paddle = (hposp##pn - 48) >> 2; }
+uint8_t checkHit;
+uint8_t skipMusic;
+uint8_t doPlay;
 /* --------------------------------------------------------------------------------------------- */
 /* Delayed VBI - MODE: Game Started                                                              */
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameRunning(void)
 {
+
     GTIA_WRITE.prior = PRIOR_P03_PF03;
 
-                  //  GTIA_WRITE.colbk = mainbgcolor;
+                GTIA_WRITE.colbk = 0;;
+
 
     fs2 = 0;
     if (jlh < 1) { jlh = 7; fs2 = 1; }
@@ -774,64 +831,41 @@ void dvbi_routine_GameRunning(void)
     if (fs == 6) fs = 5;
     fs += DOFFSET;
 
-    /* Yes, fill new row with crops */
-    if (jlh == 6)
+//    if (jlh == 6)
     {
+                
+
+    }
+
+    /* Update player positions */
+    if (jlh != 6)
+    {
+            //GTIA_WRITE.colbk = 0;
+
+        /* Player positions are updated every vertical blank, except on coarse scroll */
+        if (skipMusic == 0)
+        {
+            MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        }
+        else if (skipMusic == 1)
+        {
+            MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        }
+        else if (skipMusic == 2)
+        {
+            MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        }
+        else
+        {
+            MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
+        }
+        skipMusic++;
+        skipMusic &= 0x03;
     }
     else
     {
-
-    /* Player positions are updated every vertical blank */
-    //MOVE_PLAYER(0, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    //MOVE_PLAYER(1, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    //MOVE_PLAYER(2, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
-    MOVE_PLAYER(3, PLAYER_MIN_HPOS, PLAYER_MAX_HPOS);
     }
 
-#if 1
-    if (blown == 0)
-    {
-        if (targeted == 0)
-        {
-            if ((droneTarget > hposDrone))
-            {
-                hposDrone++;
-                hposShadow = hposShadowDelta + hposDrone - 16;
-                if (lastDir != 1)
-                {
-                    if ((dvs != 0) && (droneTarget - hposDrone) > 8) { dvs = 0; droneVolume = 45; volume = 150; tone = 1; }
-                }
-            }
-            else if ((droneTarget < hposDrone))
-            {
-                hposDrone--;
-                hposShadow = hposShadowDelta + hposDrone - 16;
-                if (lastDir != 2)
-                {
-                    if ((dvs != 0) && (hposDrone - droneTarget) > 8) { dvs = 0; droneVolume = 45; volume = 150; tone = 0; }
-                }
-            }
-            else 
-            {
-                targeted = (rf() & 0x03) + 1;
-                dvs = 1;
-                lastDir = 0;
-            }
-        }    
-        else if (targeted == 1)
-        {
-            hposDrone++;
-            hposShadow = hposShadowDelta + hposDrone - 16;    
-            lastDir = 1; 
-        }
-        else if (targeted == 2)
-        {
-            hposDrone--;
-            hposShadow = hposShadowDelta + hposDrone - 16;
-            lastDir = 2;
-        }
-    }
-#endif
 
     /* Coarse scroll? */
     /* Update display lists and row pointers? */
@@ -855,7 +889,10 @@ void dvbi_routine_GameRunning(void)
 
         /* Copy proper display list, advance to next coarse scroll */
         memcpy(dl, dlp, DL_SIZE - 3);
-        memset(lphrl + 3, CHAR_CROP, NUM_COLUMNS - 6);
+
+    }
+    else if (lphrl != NULL)
+        {
 
         /* Update row pointers for players */
         if (cline == 0)
@@ -884,16 +921,16 @@ void dvbi_routine_GameRunning(void)
         }
     
         gs = 0;
-    }
+        checkHit = 4;
+
+        memset(lphrl + 3, CHAR_CROP, NUM_COLUMNS - 6);
+            lphrl = NULL;
+        }
     else
     {
 
-#if 1        
-//        HIT_PLAYER(0);
-//        HIT_PLAYER(1);
-//        HIT_PLAYER(2);
 
-        //gs = 7;
+#if 1        
         if (gs == 0)
         {
             /* Animate Repairs and EMPs */
@@ -906,7 +943,12 @@ void dvbi_routine_GameRunning(void)
         {
             /* Yes, fill new row with crops */
             //memset(phrl + 3, CHAR_CROP, NUM_COLUMNS - 6);
+#if 0            
+            HIT_PLAYER(0);
+            HIT_PLAYER(1);
+            HIT_PLAYER(2);
             HIT_PLAYER(3);
+#endif            
         }
         else if (gs == 3)
         {
@@ -1046,7 +1088,7 @@ void dvbi_routine_GameRunning(void)
                 }
                 phrd -= rev;
             }            
-
+#if 1
             if (hposDrone >= (PLAYER_MIN_HPOS - 4) && hposDrone < (PLAYER_MAX_HPOS - 8))
             {
                 rev = ((hposDrone - PLAYER_MIN_HPOS) >> 2) + 4;
@@ -1070,21 +1112,22 @@ void dvbi_routine_GameRunning(void)
                 }
                 phrd -= rev;
             }
+#endif                
         }
         else if (gs == 5)
         {
-                //GTIA_WRITE.colbk = 0;
 
                 /* Check for blow up drone */
             if ((blowUp == 0) && (blown == 0))
             {
 
                 activateEMP = 0;
+#if 1               
                 BLOW_PLAYER(0);
                 BLOW_PLAYER(1);
                 BLOW_PLAYER(2);
                 BLOW_PLAYER(3);
-
+#endif
                 /* All players firing EMP at same time? */
                 if (activateEMP == 0x0F)
                 {
@@ -1120,7 +1163,90 @@ void dvbi_routine_GameRunning(void)
     /* Update drone targeting counter */
     droneTargetCount++;
 
-    PLAY_MUSIC();
+//    PLAY_MUSIC();
+    if (checkHit == 4)
+    {
+        checkHit--;
+        HIT_PLAYER(0);
+        HIT_PLAYER(1);
+        HIT_PLAYER(2);
+        HIT_PLAYER(3);
+    }
+#if 0    
+    else if (checkHit == 3)
+    {
+        checkHit--;
+        HIT_PLAYER(1);
+    }
+    else if (checkHit == 2)
+    {
+        checkHit--;
+        HIT_PLAYER(2);
+    }
+    else if (checkHit == 1)
+    {
+        checkHit--;
+        HIT_PLAYER(3);
+    }
+#endif        
+    else if (jlh < MUSIC_PLAY_COUNT)
+    {
+    #if 0
+    if (blown == 0)
+    {
+        if (targeted == 0)
+        {
+            if ((droneTarget > hposDrone))
+            {
+                hposDrone++;
+                hposShadow = hposShadowDelta + hposDrone - 16;
+                if (lastDir != 1)
+                {
+                    if ((dvs != 0) && (droneTarget - hposDrone) > 8) { dvs = 0; droneVolume = 45; volume = 150; tone = 1; }
+                }
+            }
+            else if ((droneTarget < hposDrone))
+            {
+                hposDrone--;
+                hposShadow = hposShadowDelta + hposDrone - 16;
+                if (lastDir != 2)
+                {
+                    if ((dvs != 0) && (hposDrone - droneTarget) > 8) { dvs = 0; droneVolume = 45; volume = 150; tone = 0; }
+                }
+            }
+            else 
+            {
+                targeted = (rf() & 0x03) + 1;
+                dvs = 1;
+                lastDir = 0;
+            }
+        }    
+        else if (targeted == 1)
+        {
+            hposDrone++;
+            hposShadow = hposShadowDelta + hposDrone - 16;    
+            lastDir = 1; 
+        }
+        else if (targeted == 2)
+        {
+            hposDrone--;
+            hposShadow = hposShadowDelta + hposDrone - 16;
+            lastDir = 2;
+        }
+    }
+#endif
+
+        //if (skipMusic == 0) 
+
+        doPlay = 1;
+        //RMTPlay;
+       // skipMusic = 0;
+    }
+
+
+//rmtplayCount++;
+    //if (rmtplayCount > MUSIC_PLAY_COUNT) rmtplayCount = 0;
+
 #if 0        
     if (rmtplayCount < 5)
     {
@@ -1163,6 +1289,9 @@ void dvbi_routine_GameRunning(void)
 #endif
     }
 #endif
+
+    GTIA_WRITE.colbk = mainbgcolor;
+
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1268,13 +1397,19 @@ void dvbi_routine_GameIdle(void)
 
     //fs2 -= 2;
     //fs2 &= 0x07;
-
-    TOGGLE_PLAYER(0);
-    TOGGLE_PLAYER(1);
-    TOGGLE_PLAYER(2);
-    TOGGLE_PLAYER(3);
     
-    PLAY_MUSIC();
+//    rmtplayCount = jlh;
+    if (jlh < MUSIC_PLAY_COUNT)
+    {
+        RMTPlay;
+    }
+    else
+    {
+        TOGGLE_PLAYER(0);
+        TOGGLE_PLAYER(1);
+        TOGGLE_PLAYER(2);
+        TOGGLE_PLAYER(3);
+    }
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1440,6 +1575,9 @@ uint8_t LyricWait(uint8_t vblanks)
 }
 
 #endif
+
+#define TIMING1 56
+#define TIMING2 112
 /* --------------------------------------------------------------------------------------------- */
 /* Main loop                                                                                     */
 /* --------------------------------------------------------------------------------------------- */
@@ -1449,14 +1587,14 @@ void main(void)
 
 #define LYRIC(lp, ls) \
         memcpy(&notice[0], lp, 40); \
-        if (LyricWait(48)) goto lyricBreak;
+        if (LyricWait(TIMING1)) goto lyricBreak;
 
 #define LYRIC2(lp, ls) \
         memcpy(&notice[0], lp, 40); \
-        if (LyricWait(96)) goto lyricBreak;
+        if (LyricWait(TIMING2)) goto lyricBreak;
 
     /* Display Lyrics to Music */
-
+    jlh = 7;
     /* Copy the next display list to base DL List RAM */
     waitForVBLANK();
     OS.color0 = 0;
@@ -1476,9 +1614,9 @@ void main(void)
     //for (;;)
     {
         memcpy(&notice[0], ly0, 40);
-        LyricWait(96);
+        LyricWait(TIMING2);
         memset(&notice[0], 0, 40);
-        LyricWait(96);
+        LyricWait(TIMING2);
 
         LYRIC(ly1, 26);
         LYRIC(ly2, 28);
@@ -1497,7 +1635,7 @@ void main(void)
 
         memset(&notice[0], 0, 40);
 
-        LyricWait(192);
+        LyricWait(TIMING2 << 1);
 
         LYRIC(ly1, 26);
         LYRIC(ly2, 28);
@@ -1580,6 +1718,7 @@ lyricBreak:
 
     while (1)
     {
+            //GTIA_WRITE.colbk = 0;
 
         if (idleInit == 1)
         {
@@ -1787,7 +1926,7 @@ lyricBreak:
             OS.color4 = 0;
             OS.chbas = 0xE0;
 
-#if 0
+#if 1
             /* Enable ALL players for testing */
             state0 |= PLAYER_ACTIVE_BIT;
             state1 |= PLAYER_ACTIVE_BIT;
@@ -1928,12 +2067,22 @@ lyricBreak:
 
             ANTIC.nmien = 0xC0;
         }
+        //GTIA_WRITE.colbk = mainbgcolor;
 
+        HIT_PLAYER_MAIN(0);
+        HIT_PLAYER_MAIN(1);
+        HIT_PLAYER_MAIN(2);
+        HIT_PLAYER_MAIN(3);
+        if (doPlay)
+        {
+            RMTPlay;
+            doPlay = 0;
+        }
         /* Drone targeting logic; alternates targeting player positions */
-        if ((droneTargetCount == 40) && ((state0 & PLAYER_ACTIVE_BIT) != 0))       { dvs = 1; droneTarget = hposp0 - 4; targeted = 0; }
-        else if ((droneTargetCount == 80) && ((state1 & PLAYER_ACTIVE_BIT) != 0))  { dvs = 1; droneTarget = hposp1 - 4; targeted = 0; }
-        else if ((droneTargetCount == 120) && ((state2 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp2 - 4; targeted = 0; }
-        else if ((droneTargetCount == 160) && ((state3 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp3 - 4; targeted = 0; }
-        if (droneTargetCount > 160) droneTargetCount = 0;
+        //if ((droneTargetCount == 40) && ((state0 & PLAYER_ACTIVE_BIT) != 0))       { dvs = 1; droneTarget = hposp0 - 4; targeted = 0; }
+        //else if ((droneTargetCount == 80) && ((state1 & PLAYER_ACTIVE_BIT) != 0))  { dvs = 1; droneTarget = hposp1 - 4; targeted = 0; }
+        //else if ((droneTargetCount == 120) && ((state2 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp2 - 4; targeted = 0; }
+        //else if ((droneTargetCount == 160) && ((state3 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp3 - 4; targeted = 0; }
+        //if (droneTargetCount > 160) droneTargetCount = 0;
     }
 }
