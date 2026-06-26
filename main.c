@@ -692,7 +692,7 @@ uint8_t *pcp3;
     pcc##pn = *pcp##pn; \
     if (pcc##pn == CHAR_CROP) { score++; *pcp##pn = CHAR_BLANK; } \
     else if (pcc##pn == CHAR_ROCK) { if (colpm##pn == ((HUE_MAGENTA << 4) | 0x06)) {  dayInit = 2; } else { colpm##pn = (HUE_MAGENTA << 4) | 0x06; } } \
-    else if (pcc##pn == CHAR_REPAIR) { colpm##pn = 0; *pcp##pn = CHAR_BLANK;} \
+    else if (pcc##pn == CHAR_REPAIR) { colpm##pn = 0; *pcp##pn = CHAR_BLANK; rageCount++; } \
     else if (pcc##pn == (CHAR_EMP | 0x80)) { colpm##pn = (HUE_BLUE2 << 4) |  0x06; *pcp##pn = CHAR_BLANK;}
 
 #define HIT_PLAYER_MAIN(pn) \
@@ -1396,6 +1396,16 @@ uint8_t LyricWait(uint8_t vblanks)
 
 #endif
 
+/* --------------------------------------------------------------------------------------------- */
+/* Waits for vblank.                                                                             */
+/* --------------------------------------------------------------------------------------------- */
+#define waitForVBLANKold() { \
+    currClockFrame = OS.rtclok[2]; \
+    while (OS.rtclok[2] == currClockFrame); \
+}
+
+uint8_t hz = 60;
+
 #define TIMING1 56
 #define TIMING2 112
 /* --------------------------------------------------------------------------------------------- */
@@ -1403,6 +1413,18 @@ uint8_t LyricWait(uint8_t vblanks)
 /* --------------------------------------------------------------------------------------------- */
 void main(void)
 {
+    /* Check for pal */
+    waitForVBLANKold();
+    currClockFrame = OS.rtclok[2]; \
+    while (OS.rtclok[2] == currClockFrame)
+    {
+        if (ANTIC.vcount >= 133)
+        {
+            hz = 50;
+            break;
+        }
+    }
+
 #if DO_LYRICS == 1
 
 #define LYRIC(lp, ls) \
@@ -1672,7 +1694,7 @@ lyricBreak:
             maxRockVal = 214;
             maxRepairVal = maxRockVal - 15;
             maxEMPVal = maxRepairVal - 5;
-            rageCount = 0;
+            rageCount = 103;
             idleInit = 0;
         }
         else if (runInit == 1)
@@ -1876,6 +1898,14 @@ lyricBreak:
             waitForVBLANK();
             vblanks = 0;
             RMTStop;
+            doPlay = 0;
+            POKEY_WRITE.audf3 = 0;
+            POKEY_WRITE.audc3 = 0;
+            POKEY_WRITE.audf1 = 0;
+            POKEY_WRITE.audc1 = 0;
+            POKEY_WRITE.audf2 = 0;
+            POKEY_WRITE.audc2 = 0;
+
             ANTIC.nmien = 0x00;
             memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
             OS.vvblkd = &dvbi_routine_Gameover;
@@ -1948,14 +1978,24 @@ lyricBreak:
             doPlay = 0;
         }
 
-        /* Drone targeting logic; alternates targeting player positions */
-        if (hposp0 == 0 && hposp1 == 0 && hposp2 == 0 && hposp3 == 0) { dvs = 1; droneTarget = 120; targeted = 0; }
+        if ((hz == 50) && ((droneTargetCount & 0x03) != 0))
         {
-            if ((droneTargetCount == 60) && ((state0 & PLAYER_ACTIVE_BIT) != 0))       { dvs = 1; droneTarget = hposp0 - 4; targeted = 0; }
-            else if ((droneTargetCount == 120) && ((state1 & PLAYER_ACTIVE_BIT) != 0))  { dvs = 1; droneTarget = hposp1 - 4; targeted = 0; }
-            else if ((droneTargetCount == 180) && ((state2 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp2 - 4; targeted = 0; }
-            else if ((droneTargetCount == 240) && ((state3 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp3 - 4; targeted = 0; }
-            if (droneTargetCount > 240) droneTargetCount = 0;
+            continue;
+        }
+
+        /* Drone targeting logic; alternates targeting player positions */
+        //ANTIC.nmien = 0x00;
+        if (hposp0 == 0 && hposp1 == 0 && hposp2 == 0 && hposp3 == 0)
+        { 
+            dvs = 1; droneTarget = 120; targeted = 0; 
+        }
+        else
+        {
+            if ((droneTargetCount == 48) && ((state0 & PLAYER_ACTIVE_BIT) != 0))       { dvs = 1; droneTarget = hposp0 - 4; targeted = 0; tone = 1; droneVolume= 15; volume = 150;}
+            else if ((droneTargetCount == 96) && ((state1 & PLAYER_ACTIVE_BIT) != 0))  { dvs = 1; droneTarget = hposp1 - 4; targeted = 0; tone = 1; droneVolume= 15; volume = 150;}
+            else if ((droneTargetCount == 144) && ((state2 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp2 - 4; targeted = 0; tone = 1; droneVolume= 15; volume = 150;}
+            else if ((droneTargetCount == 192) && ((state3 & PLAYER_ACTIVE_BIT) != 0)) { dvs = 1; droneTarget = hposp3 - 4; targeted = 0; tone = 1; droneVolume= 15; volume = 150; }
+            else if (droneTargetCount == 240) { dvs = 1; rfv(droneTarget); targeted = 0; tone = 1; droneVolume= 15; volume = 150;}
         }
 
         /* Drone targeting */
@@ -1976,6 +2016,7 @@ lyricBreak:
                 else 
                 {
                     targeted = 1;
+                    droneVolume = 0;
                 }
             }   
         }
