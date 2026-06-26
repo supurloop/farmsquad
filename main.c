@@ -1064,7 +1064,7 @@ void dvbi_routine_GameRunning(void)
                 //if (PEEK(PTRIG3) == 0)
                 {
                     /* Yes, drone in field? */
-                    if (hposDrone >= (PLAYER_MIN_HPOS - 4) && hposDrone < (PLAYER_MAX_HPOS - 8))
+                    if (hposDrone >= (PLAYER_MIN_HPOS - 24) && hposDrone < (PLAYER_MAX_HPOS + 16))
                     {
                         /* Hide players and blow up drone */
                         SET_ACTIVE_PLAYER_POS(0,0);
@@ -1685,7 +1685,7 @@ lyricBreak:
             vblanks = 4;
             ANTIC.nmien = 0xC0;
 #endif                
-            day = 1;
+            day = 100;
             hposShadowDelta = 0;
             hposShadowCounts = 0;
             minRockVal = 40;
