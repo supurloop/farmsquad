@@ -566,9 +566,6 @@ const char *ly19 = "\x00\x00\x00\x21nd\x00live\x00to\x00" "fight\x00\x0d\x00" "a
 void dli_routine7(void);
 void dli_routineNull(void);
 
-//    fs--; fs &= 0x07;
-//    fs--; fs &= 0x07;
-
 uint8_t jlh = 7;
 #define DLI_DELAY() \
     GTIA_WRITE.sizep3 = 1; \
@@ -767,6 +764,8 @@ void dvbi_routine_GameRunning(void)
 {
     GTIA_WRITE.prior = PRIOR_P03_PF03;
 
+                  //  GTIA_WRITE.colbk = mainbgcolor;
+
     fs2 = 0;
     if (jlh < 1) { jlh = 7; fs2 = 1; }
     ANTIC.vscrol = jlh;
@@ -884,7 +883,7 @@ void dvbi_routine_GameRunning(void)
             phrd -= NUM_COLUMNS;
         }
     
-//        gs = 0;
+        gs = 0;
     }
     else
     {
@@ -893,15 +892,9 @@ void dvbi_routine_GameRunning(void)
 //        HIT_PLAYER(0);
 //        HIT_PLAYER(1);
 //        HIT_PLAYER(2);
-        HIT_PLAYER(3);
 
         //gs = 7;
         if (gs == 0)
-        {
-            /* Yes, fill new row with crops */
-            //memset(phrl + 3, CHAR_CROP, NUM_COLUMNS - 6);
-        }
-        else if (gs == 1)
         {
             /* Animate Repairs and EMPs */
             animation++;
@@ -909,14 +902,13 @@ void dvbi_routine_GameRunning(void)
             memcpy(p + (CHAR_REPAIR * CHAR_SET_SIZE), &repairsCharAnimation[animation], CHAR_SET_SIZE);
             memcpy(p + (CHAR_EMP * CHAR_SET_SIZE), &empCharAnimation[animation], CHAR_SET_SIZE);
         }
-        else if (gs == 2)
+        else if (gs == 1)
         {
-
+            /* Yes, fill new row with crops */
+            //memset(phrl + 3, CHAR_CROP, NUM_COLUMNS - 6);
+            HIT_PLAYER(3);
         }
         else if (gs == 3)
-        {
-        }
-        else if (gs == 4)
         {
             /* Drone blowing up animation and sound */
             if (blowUp != 0)
@@ -1027,7 +1019,7 @@ void dvbi_routine_GameRunning(void)
     #endif                
             }
         }
-        else if (gs == 5)
+        else if (gs == 4)
         {
             /* Drone eats crops, randomly drops items */
             if (hposDrone >= PLAYER_MIN_HPOS && hposDrone < PLAYER_MAX_HPOS)
@@ -1079,11 +1071,14 @@ void dvbi_routine_GameRunning(void)
                 phrd -= rev;
             }
         }
-        else if (gs == 6)
+        else if (gs == 5)
         {
-            /* Check for blow up drone */
+                //GTIA_WRITE.colbk = 0;
+
+                /* Check for blow up drone */
             if ((blowUp == 0) && (blown == 0))
             {
+
                 activateEMP = 0;
                 BLOW_PLAYER(0);
                 BLOW_PLAYER(1);
@@ -1121,8 +1116,6 @@ void dvbi_routine_GameRunning(void)
         gs &= 0x07;
 #endif
     }
-    //fs -= 2;
-    //fs &= 0x07;
 
     /* Update drone targeting counter */
     droneTargetCount++;
@@ -1213,10 +1206,8 @@ void dvbi_routine_GameIdle(void)
             dlp += DL_SIZE;
         }
 
-        GTIA_WRITE.colbk = 0;
         /* Copy proper display list, advance to next coarse scroll */
         memcpy(dl, dlp, DL_SIZE - 3);
-        GTIA_WRITE.colbk = mainbgcolor;
     }
     else
     {
