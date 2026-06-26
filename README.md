@@ -5,29 +5,41 @@ This is a homebrew game for 1980's era Atari 8-bit XL/XE (NTSC/PAL) computers.
 
 # Credits
 cc65
+
 Atari FontMaker
+
 RASTER Music Tracker
+
 Altirra
+
 AtariAge
 
 # Requirements
 Atari 8-bit XL/XE, 64KB RAM, NTSC or PAL
+
 Single and/or Double Paddles in Port 1 and/or Port 2
 
 # Instructions
 FarmSquad is a 2-4 Player cooperative paddle game; it can be played with 1 Player.
+
 The goal is to harvest and protect your crops from a remotely operated, electrolytic energy drink spraying Drone and achieve a high score for your team.
+
 Make sure your paddle pots are clean for the best experience.
 
 ## Intro Song and Music
 FarmSquad's Intro song and music is played at startup.
+
 Pressing the button on any paddle with skip the intro song and music.
-When the intro ends the Attract screen is dispalyed.
+
+When the intro ends the Attract screen is displayed.
 
 ## Selecting Players
 Players can be selected on the Attract screen.
+
 By default all Players are disabled.
+
 Briefly press the paddle button to enable or disable a Player.
+
 Each Player is uniquely identified by a 1 to 4 dot pattern below the combine tractor.
 
 ## Starting Game
@@ -50,6 +62,7 @@ As the days progress, gameplay gets more difficult. The Drone turns up more Rock
 
 ## Scoring
 Each Player scores 1 point for every cell of Crop harvested.
+
 On the Attract screen the score for the last play is displayed to the left of the HI score, cycling between other game instructions.
 
 ## Strategy and Tactics
