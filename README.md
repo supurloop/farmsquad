@@ -1,7 +1,7 @@
 # About
 This is a homebrew game for 1980's era Atari 8-bit XL/XE (NTSC/PAL) computers.
 
-[FarmSquad.png](https://github.com/supurloop/farmsquad/blob/main/FarmSquad.png)
+<img width="333" height="224" alt="image" src="https://github.com/user-attachments/assets/f182172d-ebfa-475c-88ba-64102db1064d" />
 
 # Credits
 cc65
