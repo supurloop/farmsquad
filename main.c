@@ -222,9 +222,6 @@ uint8_t rows[NUM_ROWS][NUM_COLUMNS];
 uint8_t notice[NUM_COLUMNS];
 #pragma bss-name (pop)
 
-#define PLAYER_ACTIVE_BIT        (0x01u)
-#define PLAYER_LAST_TRIG_BIT     (0x02u)
-
 #define DEFINE_PLAYER(pn) \
     uint8_t state##pn; \
     uint8_t hposp##pn; \
@@ -236,7 +233,6 @@ uint8_t notice[NUM_COLUMNS];
 #pragma bss-name (push,"ZEROPAGE")
 #pragma data-name(push,"ZEROPAGE")
 uint8_t jlh;
-uint8_t fs;
 uint8_t paddle;
 DEFINE_PLAYER(0)
 DEFINE_PLAYER(1)
@@ -256,6 +252,7 @@ uint8_t *phrd; /* Drone Row Pointer */
 uint8_t hposDrone;
 uint8_t hposShadow;
 uint8_t droneTarget;
+uint8_t fs;
 uint8_t fs2 = 7;
 uint8_t gs;
 uint8_t rmtplayCount;
@@ -671,14 +668,15 @@ uint8_t *pcp3;
         pcp##pn = NULL; \
 }
 
-#define HIT_PLAYER(pn) if (hposp##pn != 0) { \
+#define HIT_PLAYER(pn) \
+if (hposp##pn > 1) { \
     paddle = (hposp##pn - (PLAYER_MIN_HPOS - PLAYER_WIDTH)) >> 2; \
     pcp##pn = phrc + paddle; \
 }
 
 #define MOVE_PLAYER(pn, lb, ub) \
     /* Is player on field? */ \
-    if (hposp##pn != 0) \
+    if (hposp##pn > 1) \
     { \
         /* Yes, update paddle state */ \
         paddle = PEEK(PADDL##pn); \
@@ -697,47 +695,44 @@ uint8_t *pcp3;
     }
 
 #define BLOW_PLAYER(pn) { \
-    activateEMP |= ((!(state##pn & PLAYER_ACTIVE_BIT)) << pn); \
+    activateEMP |= ((hposp##pn == 0) << pn); \
     if ((hposp##pn != 0) && (hposm##pn != 0) && (PEEK(PTRIG##pn) == 0) && ((colpm##pn & 0xF0) == (HUE_BLUE2 << 4))) { activateEMP |= (0x01 << pn); } }
 
 #define TOGGLE_PLAYER(pn) \
     /* Read paddle */ \
     trigger = PEEK(PTRIG##pn); \
-    if ((trigger == 1) && (((state##pn & PLAYER_LAST_TRIG_BIT) != 0) != trigger)) \
+    if ((trigger == 1) && (state##pn != trigger)) \
     { \
         if (delay##pn < 5) { \
             POKE(77, 0); \
-            if ((state##pn & PLAYER_ACTIVE_BIT) == 0) \
+            if (hposp##pn == 0) \
             { \
                 hposp##pn = PLAYER##pn##_DFL_HPOS; \
                 hposm##pn = PLAYER##pn##_DFL_HPOS + 2; \
-                state##pn |= PLAYER_ACTIVE_BIT; \
             } \
             else \
             { \
                 hposm##pn = 0; \
                 hposp##pn = 0; \
-                state##pn &= ~PLAYER_ACTIVE_BIT; \
             } \
         } \
         delay##pn = 0; \
     } \
     else if (trigger == 0) { \
         delay##pn++; \
-        if ((delay##pn > 22) && ((state##pn & PLAYER_ACTIVE_BIT) != 0)) { \
+        if ((delay##pn > 22) && (hposp##pn != 0)) { \
             delay##pn = 0; \
             dayInit = 1; \
         } \
     } \
-    if (trigger == 0) { state##pn &= ~PLAYER_LAST_TRIG_BIT; } \
-    else { state##pn |= PLAYER_LAST_TRIG_BIT; }
+    state##pn = trigger;
 
 void dvbi_routine_GameIdleInit(void);
 void dvbi_routine_Notice(void);
 void dvbi_routine_Flash(void);
 
-#define SET_ACTIVE_PLAYER_POS(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos; hposp##pn = pos; }
-#define SET_ACTIVE_PLAYER_POS2(pn,pos) if ((state##pn & PLAYER_ACTIVE_BIT) != 0) { hposm##pn = pos + 2; hposp##pn = pos; }
+#define SET_ACTIVE_PLAYER_POS(pn,pos) if (hposp##pn != 0) { hposm##pn = pos; hposp##pn = pos; }
+#define SET_ACTIVE_PLAYER_POS2(pn,pos) if (hposp##pn >= 1) { hposm##pn = pos + 2; hposp##pn = pos; }
 uint8_t checkHit;
 uint8_t movePlayerCnt;
 uint8_t doPlay;
@@ -1031,10 +1026,10 @@ void dvbi_routine_GameRunning(void)
                     if (hposDrone >= (PLAYER_MIN_HPOS - 24) && hposDrone < (PLAYER_MAX_HPOS + 16))
                     {
                         /* Hide players and blow up drone */
-                        SET_ACTIVE_PLAYER_POS(0,0);
-                        SET_ACTIVE_PLAYER_POS(1,0);
-                        SET_ACTIVE_PLAYER_POS(2,0);
-                        SET_ACTIVE_PLAYER_POS(3,0);
+                        SET_ACTIVE_PLAYER_POS(0,1);
+                        SET_ACTIVE_PLAYER_POS(1,1);
+                        SET_ACTIVE_PLAYER_POS(2,1);
+                        SET_ACTIVE_PLAYER_POS(3,1);
                     }
                     else
                     {
@@ -1442,10 +1437,10 @@ lyricBreak:
     prptr = &paddleRate[0];
 
     /* Initialize Player's last trigger value */
-    state0 |= PLAYER_LAST_TRIG_BIT;
-    state1 |= PLAYER_LAST_TRIG_BIT;
-    state2 |= PLAYER_LAST_TRIG_BIT;
-    state3 |= PLAYER_LAST_TRIG_BIT;
+    state0 = 1;
+    state1 = 1;
+    state2 = 1;
+    state3 = 1;
 
     /* Initialize playfield colors */
     OS.color0 = PF0_COLOR;
@@ -1544,10 +1539,10 @@ lyricBreak:
             SET_ACTIVE_PLAYER_POS2(2, PLAYER2_DFL_HPOS);
             SET_ACTIVE_PLAYER_POS2(3, PLAYER3_DFL_HPOS);
 
-            state0 |= PLAYER_LAST_TRIG_BIT;
-            state1 |= PLAYER_LAST_TRIG_BIT;
-            state2 |= PLAYER_LAST_TRIG_BIT;
-            state3 |= PLAYER_LAST_TRIG_BIT;
+            state0 = 1;
+            state1 = 1;
+            state2 = 1;
+            state3 = 1;
 
             colpm0 = 0;
             colpm1 = 0;
@@ -1601,7 +1596,6 @@ lyricBreak:
         }
         else if (runInit == 1)
         {
-#if 1
             waitForVBLANK();
             
             hposDrone = 120;
@@ -1611,10 +1605,15 @@ lyricBreak:
             blowUp = 0;
             blown = 0;
 
-            state0 |= PLAYER_LAST_TRIG_BIT;
-            state1 |= PLAYER_LAST_TRIG_BIT;
-            state2 |= PLAYER_LAST_TRIG_BIT;
-            state3 |= PLAYER_LAST_TRIG_BIT;
+            state0 = 1;
+            state1 = 1;
+            state2 = 1;
+            state3 = 1;
+
+            SET_ACTIVE_PLAYER_POS2(0, PLAYER0_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS2(1, PLAYER1_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS2(2, PLAYER2_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS2(3, PLAYER3_DFL_HPOS);
 
             colpm0 = 0;
             colpm1 = 0;
@@ -1656,7 +1655,6 @@ lyricBreak:
             /* Initialize and sitch to custom character set @ CS_ADDR */
             OS.chbas = CS_ADDR_HI;
             ANTIC.nmien = 0xC0;
-#endif                
             runInit = 0;
         }
         else if (dayInit == 1)
@@ -1674,12 +1672,12 @@ lyricBreak:
             notice[22] = (day % 10) + 16;
 
             memcpy(&notice[16], "\x24" "ay", 3);
-#if 1
+
             for (tmp = 0; tmp < NUM_ROWS; tmp++)
             {
                 memset(&rows[tmp][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
             }
-#endif      
+
             if (day > 1)
             {
                 if (minRockVal < 80) minRockVal++;
@@ -1723,10 +1721,14 @@ lyricBreak:
 
 #if 0
             /* Enable ALL players for testing */
-            state0 |= PLAYER_ACTIVE_BIT;
-            state1 |= PLAYER_ACTIVE_BIT;
-            state2 |= PLAYER_ACTIVE_BIT;
-            state3 |= PLAYER_ACTIVE_BIT;
+            hposp0 = 1;
+            hposp1 = 1;
+            hposp2 = 1;
+            hposp3 = 1;
+//            state0 |= PLAYER_ACTIVE_BIT;
+//            state1 |= PLAYER_ACTIVE_BIT;
+//            state2 |= PLAYER_ACTIVE_BIT;
+//            state3 |= PLAYER_ACTIVE_BIT;
 #endif
 
             SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
@@ -1891,10 +1893,10 @@ lyricBreak:
         }
         else
         {
-            if ((droneTargetCount == 48) && ((state0 & PLAYER_ACTIVE_BIT) != 0))       { droneTarget = hposp0 - 4; targeted = 0; droneVolume= 15; volume = 150;}
-            else if ((droneTargetCount == 96) && ((state1 & PLAYER_ACTIVE_BIT) != 0))  { droneTarget = hposp1 - 4; targeted = 0; droneVolume= 15; volume = 150;}
-            else if ((droneTargetCount == 144) && ((state2 & PLAYER_ACTIVE_BIT) != 0)) { droneTarget = hposp2 - 4; targeted = 0; droneVolume= 15; volume = 150;}
-            else if ((droneTargetCount == 192) && ((state3 & PLAYER_ACTIVE_BIT) != 0)) { droneTarget = hposp3 - 4; targeted = 0; droneVolume= 15; volume = 150; }
+            if ((droneTargetCount == 48) && (hposp0 != 0))       { droneTarget = hposp0 - 4; targeted = 0; droneVolume= 15; volume = 150;}
+            else if ((droneTargetCount == 96) && (hposp1 != 0))  { droneTarget = hposp1 - 4; targeted = 0; droneVolume= 15; volume = 150;}
+            else if ((droneTargetCount == 144) && (hposp2 != 0)) { droneTarget = hposp2 - 4; targeted = 0; droneVolume= 15; volume = 150;}
+            else if ((droneTargetCount == 192) && (hposp3 != 0)) { droneTarget = hposp3 - 4; targeted = 0; droneVolume= 15; volume = 150; }
             else if (droneTargetCount == 240) { rfv(droneTarget); targeted = 0; droneVolume= 15; volume = 150;}
         }
 
