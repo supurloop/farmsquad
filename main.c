@@ -1542,6 +1542,8 @@ lyricBreak:
 
         if (idleInit == 1)
         {
+            //waitForVBLANK();
+
 #if 1
             ANTIC.nmien = 0x00;
             OS.chbas = CS_ADDR_HI;
@@ -1556,6 +1558,7 @@ lyricBreak:
             RMTInitIdle;
 #endif
             /* Generate Farmsquad logo */
+            //waitForVBLANK();
             for (paddle = 0; paddle < NUM_ROWS; paddle++)
             {
                 memset(&rows[paddle][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
@@ -1570,6 +1573,7 @@ lyricBreak:
 
             //ANTIC.nmien = 0x00;
 #if 1            
+           // waitForVBLANK();
             if (score != 0)
             {
                 WRITE_TEXT(6, ROW_ADDR_OFF, gameOverStr, sizeof(gameOverStr));
@@ -1610,6 +1614,7 @@ lyricBreak:
             //ANTIC.nmien = 0xC0;
 
             score = 0;
+           // waitForVBLANK();
 
             SET_ACTIVE_PLAYER_POS2(0, PLAYER0_DFL_HPOS);
             SET_ACTIVE_PLAYER_POS2(1, PLAYER1_DFL_HPOS);
@@ -1661,7 +1666,6 @@ lyricBreak:
             day = 1;
             hposShadowDelta = 0;
             hposShadowCounts = 0;
-            idleInit = 0;
             minRockVal = 40;
             minRepairVal = minRockVal + 15;
             minEMPVal = minRepairVal + 5;
@@ -1669,10 +1673,12 @@ lyricBreak:
             maxRepairVal = maxRockVal - 15;
             maxEMPVal = maxRepairVal - 5;
             rageCount = 0;
+            idleInit = 0;
         }
         else if (runInit == 1)
         {
 #if 1
+            waitForVBLANK();
             ANTIC.nmien = 0x00;
             
             hposDrone = 120;
@@ -1733,7 +1739,6 @@ lyricBreak:
             /* Disable attract mode */
             POKE(77, 0);
 
-            dayInit = 0;
             vblanks = 0;
             rageErase = 0;
             lastDir = 0;
@@ -1805,12 +1810,15 @@ lyricBreak:
             rs += PEEK(PADDL1);
             rs += PEEK(PADDL2);
             rs += PEEK(PADDL3);
+
+            dayInit = 0;
+
         }
         else if (flashInit == 1)
         {
+            waitForVBLANK();
             vblanks = 0;
             vblankEnd = 1;
-            waitForVBLANK();
             ANTIC.nmien = 0x00;
             memcpy((void *)DL_ADDR, &dlistflash, DL_SIZE);
             OS.vvblkd = &dvbi_routine_Flash;
@@ -1842,7 +1850,6 @@ lyricBreak:
         {
             waitForVBLANK();
             ANTIC.nmien = 0x00;
-            flashInit = 0;
             OS.vvblkd = &dvbi_routine_GameRunning;
             OS.vdslst = &dli_routine7;
             OS.sdlst = (void *)DL_ADDR;
@@ -1861,13 +1868,13 @@ lyricBreak:
             vblanks = 0;
             OS.color4 = mainbgcolor;
 
+            flashInit = 0;
             ANTIC.nmien = 0xC0;
         }
         else if (dayInit == 2)
         {
-            dayInit = 0;
-            vblanks = 0;
             waitForVBLANK();
+            vblanks = 0;
             RMTStop;
             ANTIC.nmien = 0x00;
             memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
@@ -1889,6 +1896,7 @@ lyricBreak:
             OS.color3 = 0;
             OS.color4 = 0;
             OS.chbas = 0xE0;
+            dayInit = 0;
 
             ANTIC.nmien = 0xC0;
         }
