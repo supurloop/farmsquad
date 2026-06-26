@@ -233,16 +233,22 @@ uint8_t notice[NUM_COLUMNS];
 /* Frequently used variables - Put in Zero Page */
 #pragma bss-name (push,"ZEROPAGE")
 #pragma data-name(push,"ZEROPAGE")
+uint8_t line;
+uint8_t dline;
+uint8_t cline;
+uint8_t jlh;
+uint8_t paddle;
+uint8_t wsyncCount;
 DEFINE_PLAYER(0)
 DEFINE_PLAYER(1)
 DEFINE_PLAYER(2)
 DEFINE_PLAYER(3)
-uint8_t jlh;
-uint8_t paddle;
-uint8_t wsyncCount;
-uint8_t line;
-uint8_t dline;
-uint8_t cline;
+uint8_t hposDrone;
+uint8_t hposShadow;
+uint8_t droneTarget;
+uint8_t rmtplayCount;
+uint8_t trigger;
+uint8_t blowUp;
 #pragma bss-name (pop)
 #pragma data-name(pop)
 
@@ -250,19 +256,13 @@ uint8_t *prptr; /* Paddle Rate Array Pointer */
 uint8_t *phrc; /* Player Row Pointer */
 uint8_t *phrd; /* Drone Row Pointer */
 
-uint8_t hposDrone;
-uint8_t hposShadow;
-uint8_t droneTarget;
 uint8_t fs;
 uint8_t fs2 = 7;
 uint8_t gs;
-uint8_t rmtplayCount;
 uint8_t hposShadowDelta;
 uint8_t hposShadowCounts;
 uint8_t *phrl; /* Top Line Row Pointer */
 uint8_t *lphrl; /* Top Line Row Pointer */
-uint8_t trigger;
-uint8_t blowUp;
 uint8_t blown;
 uint8_t animation;
 uint16_t score;
@@ -1863,7 +1863,6 @@ lyricBreak:
             ANTIC.nmien = 0x00;
             vblanks = 0;
             //RMTStop;
-            doPlay = 0;
             POKEY_WRITE.audf3 = 0;
             POKEY_WRITE.audc3 = 0;
             POKEY_WRITE.audf1 = 0;
@@ -1892,7 +1891,6 @@ lyricBreak:
             OS.chbas = 0xE0;
             dayInit = 0;
             doPlay = 0;
-
             ANTIC.nmien = 0xC0;
             POKE(559, absc);
         }
