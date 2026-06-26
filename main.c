@@ -55,7 +55,7 @@
 /* --------------------------------------------------------------------------------------------- */
 /* Macros                                                                                        */
 /* --------------------------------------------------------------------------------------------- */
-#define TEST_MODE (1u)
+#define TEST_MODE (0u)
 #define RMT_RUN (1u)
 #define BGCOLOR (0xD01A)
 #define CS_ADDR (0x8000)
@@ -249,6 +249,8 @@ uint8_t droneTarget;
 uint8_t rmtplayCount;
 uint8_t trigger;
 uint8_t blowUp;
+uint8_t fs;
+uint8_t vblanks;
 #pragma bss-name (pop)
 #pragma data-name(pop)
 
@@ -256,11 +258,10 @@ uint8_t *prptr; /* Paddle Rate Array Pointer */
 uint8_t *phrc; /* Player Row Pointer */
 uint8_t *phrd; /* Drone Row Pointer */
 
-uint8_t fs;
-uint8_t fs2 = 7;
-uint8_t gs;
 uint8_t hposShadowDelta;
 uint8_t hposShadowCounts;
+uint8_t fs2 = 7;
+uint8_t gs;
 uint8_t *phrl; /* Top Line Row Pointer */
 uint8_t *lphrl; /* Top Line Row Pointer */
 uint8_t blown;
@@ -305,7 +306,6 @@ uint8_t lostEMPs;
 uint8_t doShadow;
 uint8_t targeted;
 uint8_t droneTargetCount;
-uint8_t vblanks;
 uint8_t idleInit;
 uint8_t runInit;
 uint8_t dayInit;
