@@ -29,7 +29,7 @@ Make sure your paddle pots are clean for the best experience.
 ## Hero Song and Music Introduction
 FarmSquad's Hero song and music is played at startup.
 
-Pressing the button on any paddle with skip the Introduction screen.
+Pressing the button on any paddle will skip the Introduction screen.
 
 When the Introduction ends the Attract screen is displayed.
 
@@ -54,11 +54,11 @@ The rectangular steering indicator at the front of the combine tractor indictes 
 
 A remotely operated Drone kills Crops in its path with an electrolyic energy drink spray. It sometimes turns up Rocks, Repairs and EMPs buried in the field. Occasionally the Drone Rages and kills an entire field of Crops. The Drone's Rage level is indicated by the it's center color (green, yellow, or red for NTSC).
 
-Each Player harvests Crops and must dodge Rocks to avoid damage. If a Player hits a Rock they change color to indicate damage, a second Rock hit will end the game for all Players. Collecting a Repair or EMP fixes a damaged Player.
+Each Player harvests Crops and must dodge Rocks to avoid damage. If a Player hits a Rock they change color to indicate damage, a second Rock hit will end the game for ALL Players. Collecting a Repair or EMP fixes a damaged Player.
 
 If an EMP is collected the Player changes color. If a Player collects a Repair or hits a Rock they lose their EMP. When ALL Players have an EMP they can simultaneously hold down their paddle buttons to destroy the Drone. Be careful, Players activating their EMPs when the Drone is out of range (no blade spinning sounds can be heard) will lose their EMPs and the Drone will not be affected. When the drone is successfully destroyed the day immediately ends and the next day begins.
 
-Players must destroy the Drone before the end of day otherwise the game ends for all Players. The Drone's shadow moves from left to right during the day indicating how much daylight is left. As dusk decends only a little time remains for the Players to destroy the Drone.
+Players must destroy the Drone before the end of day otherwise the game ends for ALL Players. The Drone's shadow moves from left to right during the day indicating how much daylight is left. As dusk decends only a little time remains for the Players to destroy the Drone.
 
 As the days progress, gameplay gets more difficult. The Drone turns up more Rocks and fewer Repairs and EMPs.
 
