@@ -779,9 +779,10 @@ uint8_t doPlay;
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameRunning(void)
 {
-
     GTIA_WRITE.prior = PRIOR_P03_PF03;
     GTIA_WRITE.colbk = 0;;
+    if (dayInit != 0) goto skipit;
+    if (flashInit != 0) goto skipit;
 
     if (jlh < 1) { jlh = 7; fs2 = 1; }
     ANTIC.vscrol = jlh;
@@ -1115,6 +1116,7 @@ void dvbi_routine_GameRunning(void)
     }
 #endif
 
+skipit:
     GTIA_WRITE.colbk = mainbgcolor;
 
     /* JMP to XITVBV */
@@ -1128,6 +1130,8 @@ void dvbi_routine_GameRunning(void)
 void dvbi_routine_GameIdle(void)
 {
     GTIA_WRITE.prior = PRIOR_P03_PF03;
+
+    if (dayInit != 0) goto skipitIdle;
 
     if (jlh < 1) { jlh = 7; fs2 = 1; }
     ANTIC.vscrol = jlh;
@@ -1230,6 +1234,8 @@ void dvbi_routine_GameIdle(void)
 
         /* Update drone targeting counter */
     droneTargetCount++;
+
+skipitIdle:
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1405,6 +1411,7 @@ uint8_t LyricWait(uint8_t vblanks)
 }
 
 uint8_t hz = 60;
+uint8_t tmp;
 
 #define TIMING1 56
 #define TIMING2 112
@@ -1694,14 +1701,14 @@ lyricBreak:
             maxRockVal = 214;
             maxRepairVal = maxRockVal - 15;
             maxEMPVal = maxRepairVal - 5;
-            rageCount = 103;
+            rfv(rageCount);
+            if (rageCount > 100) rageCount = 100;
             idleInit = 0;
         }
         else if (runInit == 1)
         {
 #if 1
             waitForVBLANK();
-            ANTIC.nmien = 0x00;
             
             hposDrone = 120;
             hposShadow = hposDrone - 16;
@@ -1724,6 +1731,8 @@ lyricBreak:
             delay1 = 1;
             delay2 = 1;
             delay3 = 1;
+
+            ANTIC.nmien = 0x00;
 
             OS.vvblkd = &dvbi_routine_GameRunning;
             OS.vdslst = &dli_routine7;
@@ -1801,9 +1810,9 @@ lyricBreak:
 
             memcpy(&notice[16], "\x24" "ay", 3);
 #if 1
-            for (paddle = 0; paddle < NUM_ROWS; paddle++)
+            for (tmp = 0; tmp < NUM_ROWS; tmp++)
             {
-                memset(&rows[paddle][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
+                memset(&rows[tmp][ROW_ADDR_OFF], 0, NUM_PLAY_COLUMNS);
             }
 #endif      
             if (day > 1)

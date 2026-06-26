@@ -49,11 +49,12 @@ Players must destroy the Drone before the end of day otherwise the game ends for
 As the days progress, gameplay gets more difficult. The Drone turns up more Rocks and fewer Repairs and EMPs.
 
 ## Scoring
-
 Each Player scores 1 point for every cell of Crop harvested.
 On the Attract screen the score for the last play is displayed to the left of the HI score, cycling between other game instructions.
 
 ## Strategy and Tactics
+Stay near the middle of the screen to maximize the the ability of the tractor to reach Repairs and EMPs in time.
+
 If an EMP is behind a Rock and the Player is not damaged then the Player can take the Rock hit and then be repaired by the EMP.
 
 The blades of the combine are where Crops, Rocks, Repairs, and EMPs affect the Player. A Player can pass over a Rock if it is behind the blades which can help when navigating difficult terrain.
@@ -65,5 +66,4 @@ When Players are stacked, lower numbered Players will consume Crops, Repairs, an
 Since scoring is solely based on harvesting crops and gameplay is more difficult as the days progress it can be advantageous to "hold fire" of EMPs until dusk arrives. But it comes at the risk that a Player loses their EMP at the last minute and the Drone is not destroyed before the day ends.
 
 ## Competitive Team Play
-
 Split Players into two teams and alternate play between teams. The team holding the HI score after X rounds wins.
