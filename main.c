@@ -1774,34 +1774,6 @@ lyricBreak:
             rageErase = 0;
             lastDir = 0;
             waitForVBLANK();
-            ANTIC.nmien = 0x00;
-#if RMT_RUN == 1
-            RMTInitRun;
-#endif
-            memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
-            OS.vvblkd = &dvbi_routine_Notice;
-
-            OS.color0 = 0;
-            OS.color2 = 0;
-            OS.color3 = 0;
-            OS.color4 = 0;
-            OS.chbas = 0xE0;
-
-#if 0
-            /* Enable ALL players for testing */
-            state0 |= PLAYER_ACTIVE_BIT;
-            state1 |= PLAYER_ACTIVE_BIT;
-            state2 |= PLAYER_ACTIVE_BIT;
-            state3 |= PLAYER_ACTIVE_BIT;
-#endif
-
-            SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
-            SET_ACTIVE_PLAYER_POS(1, PLAYER1_DFL_HPOS);
-            SET_ACTIVE_PLAYER_POS(2, PLAYER2_DFL_HPOS);
-            SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
-
-            ANTIC.nmien = 0xC0;
-
             memset(&notice[0], 0, 40);
 
             notice[20] = ((day / 100) % 10) + 16;
@@ -1841,6 +1813,35 @@ lyricBreak:
             rs += PEEK(PADDL1);
             rs += PEEK(PADDL2);
             rs += PEEK(PADDL3);
+
+
+            ANTIC.nmien = 0x00;
+#if RMT_RUN == 1
+            RMTInitRun;
+#endif
+            memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
+            OS.vvblkd = &dvbi_routine_Notice;
+
+            OS.color0 = 0;
+            OS.color2 = 0;
+            OS.color3 = 0;
+            OS.color4 = 0;
+            OS.chbas = 0xE0;
+
+#if 0
+            /* Enable ALL players for testing */
+            state0 |= PLAYER_ACTIVE_BIT;
+            state1 |= PLAYER_ACTIVE_BIT;
+            state2 |= PLAYER_ACTIVE_BIT;
+            state3 |= PLAYER_ACTIVE_BIT;
+#endif
+
+            SET_ACTIVE_PLAYER_POS(0, PLAYER0_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(1, PLAYER1_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(2, PLAYER2_DFL_HPOS);
+            SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
+
+            ANTIC.nmien = 0xC0;
 
             dayInit = 0;
 
