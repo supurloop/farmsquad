@@ -587,6 +587,10 @@ void dli_routineNull(void);
     ANTIC.wsync = 0; \
     COMBINE_STEERING_SET_ALL();
 
+#define VBI_ENTER()
+
+#define VBI_EXIT()
+
 #define DLI_ENTER() \
     asm("pha"); \
     asm("txa"); \
@@ -748,6 +752,8 @@ uint8_t doPlay;
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameRunning(void)
 {
+    VBI_ENTER();
+
     GTIA_WRITE.prior = PRIOR_P03_PF03;
     GTIA_WRITE.colbk = 0;
     if (dayInit != 0) goto skipit;
@@ -1076,6 +1082,7 @@ void dvbi_routine_GameRunning(void)
 
 skipit:
     GTIA_WRITE.colbk = mainbgcolor;
+    VBI_EXIT();
 
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1090,6 +1097,7 @@ uint8_t testDelay;
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameIdle(void)
 {
+    VBI_ENTER();
     GTIA_WRITE.prior = PRIOR_P03_PF03;
 
     if (dayInit != 0) goto skipitIdle;
@@ -1129,7 +1137,7 @@ void dvbi_routine_GameIdle(void)
         {
             if (vblanks == 0)
             {
-                WRITE_TEXT(8, ROW_ADDR_OFF, scoreStr, sizeof(scoreStr));
+                WRITE_TEXT(8, ROW_ADDR_OFF, fireStartStr, sizeof(fireStartStr));
             }
             else if (vblanks == 1)
             {
@@ -1141,7 +1149,7 @@ void dvbi_routine_GameIdle(void)
             }
             else
             {
-                WRITE_TEXT(8, ROW_ADDR_OFF, fireStartStr, sizeof(fireStartStr));
+                WRITE_TEXT(8, ROW_ADDR_OFF, scoreStr, sizeof(scoreStr));
             }
         }
         else if (gs == 1)
@@ -1179,7 +1187,7 @@ void dvbi_routine_GameIdle(void)
 
     /* Update drone targeting counter */
     droneTargetCount++;
-
+    VBI_EXIT();
 skipitIdle:
     /* JMP to XITVBV */
     __asm__("jmp $E462");
@@ -1190,6 +1198,8 @@ skipitIdle:
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_GameIdleInit(void)
 {
+    VBI_ENTER();
+    VBI_EXIT();
     /* JMP to XITVBV */
     __asm__("jmp $E462");
 }
@@ -1199,6 +1209,7 @@ void dvbi_routine_GameIdleInit(void)
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_Notice(void)
 {
+    //VBI_ENTER();
     if (runInit != 0)
     {
         goto noticeExit;
@@ -1215,6 +1226,7 @@ void dvbi_routine_Notice(void)
     }
 
 noticeExit:
+    //VBI_EXIT();
     __asm__("jmp $E462");
 }
 
@@ -1223,6 +1235,8 @@ noticeExit:
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_Flash(void)
 {
+    VBI_ENTER();
+
     if (flashInit != 0)
     {
         goto flashExit;
@@ -1245,7 +1259,9 @@ void dvbi_routine_Flash(void)
         POKEY_WRITE.audc4 = 0x2f;
     }
 
-flashExit:    
+flashExit:   
+    VBI_EXIT();
+
     __asm__("jmp $E462");
 }
 
@@ -1259,6 +1275,8 @@ void waitForVBLANK() {
 
 void dvbi_routine_Gameover(void)
 {
+    VBI_ENTER();
+
     if (idleInit != 0)
     {
         goto goExit;
@@ -1278,6 +1296,8 @@ void dvbi_routine_Gameover(void)
     }
 
 goExit:
+    VBI_EXIT();
+
     __asm__("jmp $E462");
 }
 
@@ -1287,8 +1307,11 @@ goExit:
 /* --------------------------------------------------------------------------------------------- */
 void dvbi_routine_ShowLyrics(void)
 {
+    VBI_ENTER();
+
     PLAY_MUSIC_START();
 
+    VBI_EXIT();
     __asm__("jmp $E462");
 }
 
@@ -1366,6 +1389,7 @@ void main(void)
     OS.vvblkd = &dvbi_routine_ShowLyrics;
     OS.sdlst = (void *)DL_ADDR;
     RMTInitIdle;
+    doPlay = 0;    
     ANTIC.nmien = 0xC0;
 
     //for (;;)
@@ -1432,6 +1456,7 @@ lyricBreak:
 
     /* Copy the next display list to base DL List RAM */
     memcpy((void *)DL_ADDR, &dlist, DL_SIZE);
+    doPlay = 0;
 
     ANTIC.nmien = 0xC0;
     waitForVBLANK();
@@ -1471,6 +1496,7 @@ lyricBreak:
     /* Install Delayed VBI, DLI, and Display List */
     idleInit = 1;
     OS.vvblkd = &dvbi_routine_GameIdleInit;
+    doPlay = 0;
     ANTIC.nmien = 0xC0;
 
     while (1)
@@ -1482,6 +1508,8 @@ lyricBreak:
             waitForVBLANK();
             absc = PEEK(559);
             POKE(559, 0);
+
+           // waitForVBLANK();
             ANTIC.nmien = 0x00;
             OS.chbas = CS_ADDR_HI;
             OS.color0 = PF0_COLOR;
@@ -1491,9 +1519,6 @@ lyricBreak:
             mainbgcolor = MAIN_BG_COLOR;
             OS.color4 = mainbgcolor;
 
-#if RMT_RUN == 1      
-            RMTInitIdle;
-#endif
             /* Generate Farmsquad logo */
             for (paddle = 0; paddle < NUM_ROWS; paddle++)
             {
@@ -1607,6 +1632,10 @@ lyricBreak:
             maxEMPVal = maxRepairVal - 5;
             rfv(rageCount);
             if (rageCount > 100) rageCount = 100;
+#if RMT_RUN == 1      
+            RMTInitIdle;
+#endif
+            doPlay = 0;
             ANTIC.nmien = 0xC0;
             POKE(559, absc);
             idleInit = 0;
@@ -1673,6 +1702,8 @@ lyricBreak:
 
             /* Initialize and sitch to custom character set @ CS_ADDR */
             OS.chbas = CS_ADDR_HI;
+            doPlay = 0;
+
             ANTIC.nmien = 0xC0;
             POKE(559, absc);
             runInit = 0;
@@ -1683,6 +1714,7 @@ lyricBreak:
             waitForVBLANK();
             absc = PEEK(559);
             POKE(559, 0);
+
             ANTIC.nmien = 0x00;
 
             POKE(77, 0);
@@ -1729,9 +1761,6 @@ lyricBreak:
             rs += PEEK(PADDL2);
             rs += PEEK(PADDL3);
 
-#if RMT_RUN == 1
-            RMTInitRun;
-#endif
             memcpy((void *)DL_ADDR, &dlistlyrics, DL_SIZE);
             OS.vvblkd = &dvbi_routine_Notice;
 
@@ -1754,6 +1783,11 @@ lyricBreak:
             SET_ACTIVE_PLAYER_POS(2, PLAYER2_DFL_HPOS);
             SET_ACTIVE_PLAYER_POS(3, PLAYER3_DFL_HPOS);
 
+#if RMT_RUN == 1
+            RMTInitRun;
+#endif
+
+            doPlay = 0;
             ANTIC.nmien = 0xC0;
             POKE(559, absc);
             dayInit = 0;
@@ -1774,7 +1808,6 @@ lyricBreak:
                 droneVolume = 0;                
             }
             else { OS.color4 = 0x0f; }
-            ANTIC.nmien = 0xC0;
 
             if (rageErase)
             {
@@ -1788,6 +1821,8 @@ lyricBreak:
             {
                 memset(&rows[paddle][ROW_ADDR_OFF], flashInit, NUM_PLAY_COLUMNS);
             }
+            doPlay = 0;
+            ANTIC.nmien = 0xC0;
             POKE(559, absc);            
             flashInit = 0;
         }
@@ -1815,6 +1850,7 @@ lyricBreak:
             vblanks = 0;
             OS.color4 = mainbgcolor;
 
+            doPlay = 0;
             ANTIC.nmien = 0xC0;
             POKE(559, absc);
             flashInit = 0;
@@ -1855,6 +1891,7 @@ lyricBreak:
             OS.color4 = 0;
             OS.chbas = 0xE0;
             dayInit = 0;
+            doPlay = 0;
 
             ANTIC.nmien = 0xC0;
             POKE(559, absc);
