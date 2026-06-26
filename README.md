@@ -74,7 +74,7 @@ Be considerate of your fellow Players, try to stay out of their way if you have 
 
 If an EMP is behind a Rock and the Player is not damaged then the Player can take the Rock hit and then be repaired by the EMP.
 
-The blades of the combine tractor are where Crops, Rocks, Repairs, and EMPs affect the Player. A Player can pass over a Rock with the steering block ahead of the blades or the body of the tractor behind the blades. This can help when navigating difficult terrain.
+The under the steering indicator and blades of the combine tractor are where Crops, Rocks, Repairs, and EMPs affect the Player. A Player can pass over a Rock with the body of the tractor behind the blades. This can help when navigating difficult terrain.
 
 Player's combine blades process 2 cells of the field left to right. For example, if a Rock (left) and a Repair (right) are processed then the Player gets damaged, but is immeditely repaired.
 
