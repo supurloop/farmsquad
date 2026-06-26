@@ -1685,7 +1685,7 @@ lyricBreak:
             vblanks = 4;
             ANTIC.nmien = 0xC0;
 #endif                
-            day = 100;
+            day = 1;
             hposShadowDelta = 0;
             hposShadowCounts = 0;
             minRockVal = 40;
