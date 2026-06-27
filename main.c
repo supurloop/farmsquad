@@ -55,7 +55,7 @@
 /* --------------------------------------------------------------------------------------------- */
 /* Macros                                                                                        */
 /* --------------------------------------------------------------------------------------------- */
-#define TEST_MODE (0u)
+#define TEST_MODE (1u)
 #define RMT_RUN (1u)
 #define BGCOLOR (0xD01A)
 #define CS_ADDR (0x8000)
@@ -233,7 +233,7 @@ uint8_t notice[NUM_COLUMNS];
 /* Frequently used variables - Put in Zero Page */
 #pragma bss-name (push,"ZEROPAGE")
 #pragma data-name(push,"ZEROPAGE")
-uint8_t line;
+uint8_t line; //150
 uint8_t dline;
 uint8_t cline;
 uint8_t jlh;
@@ -251,25 +251,29 @@ uint8_t trigger;
 uint8_t blowUp;
 uint8_t fs;
 uint8_t vblanks;
+uint8_t reserved[38]; /* 184-222 Reserved for RMT (using these causes crashes) */
+uint8_t hposShadowDelta;
+uint8_t hposShadowCounts;
+uint16_t score;
+uint8_t *phrc; /* Player Row Pointer */
+uint8_t *prptr; /* Paddle Rate Array Pointer */
+/* 230-255 reserved ?? Not available for some reason */
 #pragma bss-name (pop)
 #pragma data-name(pop)
 
-uint8_t *prptr; /* Paddle Rate Array Pointer */
-uint8_t *phrc; /* Player Row Pointer */
-uint8_t *phrd; /* Drone Row Pointer */
 
-uint8_t hposShadowDelta;
-uint8_t hposShadowCounts;
-uint8_t fs2 = 7;
-uint8_t gs;
+uint8_t *phrd; /* Drone Row Pointer */
 uint8_t *phrl; /* Top Line Row Pointer */
 uint8_t *lphrl; /* Top Line Row Pointer */
+uint8_t fs2 = 7;
 uint8_t blown;
 uint8_t animation;
-uint16_t score;
 uint8_t ufoVolume;
 uint8_t droneVolume;
 uint8_t activateEMP;
+uint8_t mainbgcolor;
+uint8_t gs;
+uint8_t rev;
 uint8_t paddleRate[16] =
 {
     32, //0 r
@@ -290,7 +294,6 @@ uint8_t paddleRate[16] =
     32, //15
 };
 
-unsigned char mainbgcolor = MAIN_BG_COLOR;
 unsigned char currClockFrame = 0;
 char *p = (char *)CS_ADDR;
 char *dl;
@@ -299,7 +302,6 @@ unsigned char *dlp = &dlist;
 uint16_t hiscore;
 uint8_t day = 1;
 
-uint8_t rev;
 uint8_t volume;
 uint8_t ramp;
 uint8_t lostEMPs;
