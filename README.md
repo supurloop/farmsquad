@@ -74,7 +74,7 @@ Be considerate of your fellow Players, try to stay out of their way if you have 
 
 If an EMP is behind a Rock and the Player is not damaged then the Player can take the Rock hit and then be repaired by the EMP.
 
-The under the steering indicator and blades of the combine tractor are where Crops, Rocks, Repairs, and EMPs affect the Player. A Player can pass over a Rock with the body of the tractor behind the blades. This can help when navigating difficult terrain.
+Under the steering indicator and blades of the combine tractor are where Crops, Rocks, Repairs, and EMPs affect the Player. A Player can pass over a Rock with the body of the tractor behind the blades. This can help when navigating difficult terrain.
 
 Player's combine blades process 2 cells of the field left to right. For example, if a Rock (left) and a Repair (right) are processed then the Player gets damaged, but is immeditely repaired.
 
@@ -84,7 +84,7 @@ To maximize point accumulation, don't stack on top of other Players, stay to the
 
 Since scoring is solely based on harvesting crops and gameplay is more difficult as the days progress it can be advantageous to "hold fire" of EMPs until dusk arrives. But it comes at the risk that a Player loses their EMP at the last minute and the Drone is not destroyed before the day ends.
 
-Designate a Player to decide when to unleash the EMP. Ther other Players hold down their buttons, and the designated Player presses their button when the Drone is in range.
+Designate a Player to decide when to unleash the EMP. The other Players hold down their buttons, and the designated Player presses their button when the Drone is in range.
 
 ## Competitive Team Play
 Split Players into two teams and alternate play between teams. The team holding the HI score after X rounds wins.
